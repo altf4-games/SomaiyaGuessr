@@ -1,0 +1,28 @@
+{
+  "name": "somaiya-guessr-backend",
+  "version": "1.0.0",
+  "description": "Backend for Somaiya Campus Guessing Game",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["game", "geolocation", "campus", "express"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cloudinary": "^2.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^4.19.2",
+    "mongoose": "^8.17.1",
+    "multer": "^2.0.2",
+    "nodemon": "^3.1.10",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
