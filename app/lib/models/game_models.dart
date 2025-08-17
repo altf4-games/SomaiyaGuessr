@@ -53,12 +53,16 @@ class Player {
   final String name;
   int totalScore;
   List<RoundResult> roundResults;
+  bool isReady;
+  bool hasSubmittedGuess;
 
   Player({
     required this.id,
     required this.name,
     this.totalScore = 0,
     List<RoundResult>? roundResults,
+    this.isReady = false,
+    this.hasSubmittedGuess = false,
   }) : roundResults = roundResults ?? [];
 
   factory Player.fromJson(Map<String, dynamic> json) {
@@ -69,6 +73,8 @@ class Player {
       roundResults: (json['roundResults'] as List?)
           ?.map((r) => RoundResult.fromJson(r))
           .toList() ?? [],
+      isReady: json['isReady'] ?? false,
+      hasSubmittedGuess: json['hasSubmittedGuess'] ?? false,
     );
   }
 
@@ -78,6 +84,8 @@ class Player {
       'name': name,
       'totalScore': totalScore,
       'roundResults': roundResults.map((r) => r.toJson()).toList(),
+      'isReady': isReady,
+      'hasSubmittedGuess': hasSubmittedGuess,
     };
   }
 }
@@ -164,8 +172,9 @@ class RoundResult {
 }
 
 enum GameState {
-  waiting,
-  playing,
-  roundResult,
-  gameOver,
+  waiting,    // Lobby state - players joining and getting ready
+  starting,   // 2-second countdown before game starts
+  playing,    // Game in progress
+  roundResult, // Showing round results
+  gameOver,   // Game finished
 }

@@ -91,35 +91,39 @@ class _CampusMapState extends State<CampusMap>
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: FlutterMap(
-          options: MapOptions(
-            initialCenter: _campusCenter,
-            initialZoom: _initialZoom,
-            minZoom: 14.0,
-            maxZoom: 19.0,
-            onTap: (tapPosition, point) {
-              widget.onTap(point);
-              HapticFeedback.lightImpact(); // Added haptic feedback for better mobile experience
-            },
-            cameraConstraint: CameraConstraint.unconstrained(), // Removed restrictive camera constraint to prevent assertion errors
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-            ),
-            // bounds: LatLngBounds( // Removed unsupported bounds parameter
-            //   const LatLng(19.0650, 72.8920), // More generous southwest bound
-            //   const LatLng(19.0800, 72.9070), // More generous northeast bound
-            // ),
-            // boundsOptions: const FitBoundsOptions(
-            //   padding: EdgeInsets.all(20),
-            // ),
-          ),
+              options: MapOptions(
+                initialCenter: _campusCenter,
+                initialZoom: _initialZoom,
+                minZoom: 14.0,
+                maxZoom: 19.0,
+                onTap: (tapPosition, point) {
+                  widget.onTap(point);
+                  HapticFeedback.lightImpact(); // Added haptic feedback for better mobile experience
+                },
+                cameraConstraint: CameraConstraint.unconstrained(), // Removed restrictive camera constraint to prevent assertion errors
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                ),
+                // bounds: LatLngBounds( // Removed unsupported bounds parameter
+                //   const LatLng(19.0650, 72.8920), // More generous southwest bound
+                //   const LatLng(19.0800, 72.9070), // More generous northeast bound
+                // ),
+                // boundsOptions: const FitBoundsOptions(
+                //   padding: EdgeInsets.all(20),
+                // ),
+              ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.somaiya.guessr',
+              maxZoom: 19,
+              subdomains: const ['a', 'b', 'c'],
               errorTileCallback: (tile, error, stackTrace) {
                 // Handle tile loading errors gracefully
                 debugPrint('Tile loading error: $error');
               },
+              // Add additional configuration for better loading
+              tileProvider: NetworkTileProvider(),
             ),
             if (widget.guessLocation != null)
               MarkerLayer(

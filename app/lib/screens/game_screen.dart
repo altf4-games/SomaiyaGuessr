@@ -1,13 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
-import '../providers/game_provider.dart';
+import '../providers/realtime_game_provider.dart';
+import '../models/game_models.dart';
+import '../services/timer_service.dart';
 import '../utils/theme.dart';
 import '../widgets/campus_map.dart';
-import 'round_result_screen.dart';
-import 'game_over_screen.dart';
-import 'home_screen.dart';
+import 'game_end_screen.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -20,6 +21,9 @@ class _GameScreenState extends State<GameScreen>
     with TickerProviderStateMixin {
   late AnimationController _buttonAnimationController;
   late Animation<double> _buttonScaleAnimation;
+  final TimerService _timerService = TimerService();
+  int _timeLeft = 30;
+  bool _hasSubmitted = false;
 
   @override
   void initState() {
@@ -36,23 +40,253 @@ class _GameScreenState extends State<GameScreen>
       curve: Curves.easeInOut,
     ));
 
+    // Setup timer polling to get shared timer value
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+
+      // For realtime provider, we'll use the timeLeft from the provider directly
+      final newTimeLeft = gameProvider.timeLeft;
+      if (newTimeLeft != _timeLeft) {
+        setState(() {
+          _timeLeft = newTimeLeft;
+        });
+        print('🎮 Timer update: ${_timeLeft}s remaining');
+
+        // Note: Auto-submit is now handled entirely by the backend
+        // Frontend just displays the timer countdown
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startGameIfNeeded();
+      _setupRoundListeners();
+    });
+  }
+
+  void _setupRoundListeners() {
+    final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+
+    // Listen for round completion events
+    gameProvider.roomStream.listen((room) {
+      if (!mounted) return;
+
+      if (room != null && room.state == GameState.roundResult) {
+        // Round ended, dismiss waiting dialog if it's showing
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(); // Close waiting dialog
+        }
+
+        // Show round result briefly, then auto-advance
+        _showRoundResultBriefly();
+      } else if (room != null && room.state == GameState.playing) {
+        // New round started, reset submission state
+        _hasSubmitted = false;
+      } else if (room != null && room.state == GameState.gameOver) {
+        // Game finished, navigate to end screen
+        _navigateToEndScreen(gameProvider);
+      }
     });
   }
 
   @override
   void dispose() {
     _buttonAnimationController.dispose();
+    _timerService.stopTimer();
     super.dispose();
+  }
+
+  void _autoSubmitGuess() async {
+    final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+    if (!_hasSubmitted) {
+      _hasSubmitted = true;
+
+      // If no guess was made, set coordinates to 0,0 for 0 points
+      if (gameProvider.currentGuess == null) {
+        gameProvider.setGuess(const LatLng(0, 0));
+        print('⏰ Timer expired - auto-submitting with 0,0 coordinates for 0 points');
+      }
+
+      // Submit the guess but don't auto-advance - wait for all players
+      gameProvider.submitGuess();
+
+      if (mounted) {
+        _showWaitingForPlayersDialog();
+      }
+    }
+  }
+
+  void _showRoundResultBriefly() {
+    // Show a brief "Round Complete" message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Round Complete! Moving to next round...',
+          style: GoogleFonts.poppins(color: Colors.white),
+        ),
+        backgroundColor: AppColors.primaryAccent,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showRoundResult(RoundResult result) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Round ${result.round} Complete!',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Score: ${result.score} points',
+              style: GoogleFonts.poppins(fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Distance: ${result.distance.toStringAsFixed(0)}m',
+              style: GoogleFonts.poppins(),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Continue',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Note: Round advancement is now handled automatically by the backend
+  // No manual _startNextRound() method needed
+
+  void _navigateToEndScreen(RealtimeGameProvider gameProvider) {
+    final finalScores = gameProvider.finalScores;
+    final roomName = gameProvider.currentRoom?.name ?? 'Unknown Room';
+
+    if (finalScores != null && finalScores.isNotEmpty) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => GameEndScreen(
+            finalScores: finalScores,
+            roomName: roomName,
+          ),
+        ),
+      );
+    } else {
+      // Fallback if no scores available
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/',
+        (route) => false,
+      );
+    }
+  }
+
+  // Removed redundant _showGameOverDialog - now using GameEndScreen instead
+
+  void _showWaitingForPlayersDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.backgroundSecondary,
+        title: Text(
+          'Waiting for Other Players',
+          style: GoogleFonts.poppins(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Please wait while other players complete their guesses...',
+              style: GoogleFonts.poppins(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // Note: Dialog will be automatically dismissed by _setupRoundListeners
+    // when round-ended event is received from the backend
+  }
+
+  void _showAutoSubmitDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.backgroundSecondary,
+        title: Text(
+          'Time\'s Up!',
+          style: GoogleFonts.poppins(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          'Your guess has been automatically submitted.',
+          style: GoogleFonts.poppins(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'OK',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startRoundTimer() {
+    _hasSubmitted = false;
+    // For realtime provider, the timer is handled by the backend via socket events
+    // No need to start timer manually here
+    print('🎮 Round timer will be handled by backend socket events');
   }
 
   void _startGameIfNeeded() async {
     if (!mounted) return;
-    final gameProvider = Provider.of<GameProvider>(context, listen: false);
-    if (gameProvider.currentRoom?.state.index == 0) { // rkg
-      await gameProvider.startGame();
-    }
+    final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+
+    print('🎮 Game screen: Current room state: ${gameProvider.currentRoom?.state}');
+    print('🎮 Game screen: Current location: ${gameProvider.currentLocation?.name}');
+
+    // For realtime provider, the game is already started via socket events
+    // No need to call startGame() here
+
+    // Start the round timer when entering the game screen
+    _startRoundTimer();
+    print('🎮 Game screen loaded, timer started');
   }
 
   @override
@@ -61,7 +295,7 @@ class _GameScreenState extends State<GameScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenHeight < 700;
     
-    return Consumer<GameProvider>(
+    return Consumer<RealtimeGameProvider>(
       builder: (context, gameProvider, child) {
         final room = gameProvider.currentRoom;
         final player = gameProvider.currentPlayer;
@@ -77,15 +311,8 @@ class _GameScreenState extends State<GameScreen>
           );
         }
 
-        // Navigate based on game state
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return; // Added mounted check
-          if (room.state.index == 3) { // gameOver
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const GameOverScreen()),
-            );
-          }
-        });
+        // Note: Game over navigation is now handled by _setupRoundListeners
+        // which automatically navigates to GameEndScreen when state becomes gameOver
 
         return Scaffold(
           appBar: _buildAppBar(room, player),
@@ -100,11 +327,17 @@ class _GameScreenState extends State<GameScreen>
                 
                 return Column(
                   children: [
-                    if (location != null) 
-                      _buildLocationImage(location.imageUrl, imageHeight),
+                    // Image section - flexible height
+                    if (location != null)
+                      Container(
+                        height: imageHeight,
+                        child: _buildLocationImage(location.imageUrl),
+                      ),
+
+                    // Map section - takes remaining space
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.all(padding),
+                        padding: const EdgeInsets.all(8.0),
                         child: CampusMap(
                           onTap: (LatLng position) {
                             gameProvider.setGuess(position);
@@ -113,12 +346,14 @@ class _GameScreenState extends State<GameScreen>
                         ),
                       ),
                     ),
+
+                    // Button section - fixed height
                     Container(
                       height: buttonHeight,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _buildSubmitButton(gameProvider),
                     ),
-                    const SizedBox(height: 8), // Added bottom spacing for better mobile experience
+                    const SizedBox(height: 8),
                   ],
                 );
               },
@@ -142,6 +377,24 @@ class _GameScreenState extends State<GameScreen>
         ),
       ),
       actions: [
+        // Timer widget
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.primaryAccent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            '${_timeLeft}s',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Score widget
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Reduced padding
           margin: const EdgeInsets.only(right: 12),
@@ -168,9 +421,8 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Widget _buildLocationImage(String imageUrl, double height) {
+  Widget _buildLocationImage(String imageUrl) {
     return Container(
-      height: height,
       width: double.infinity,
       margin: const EdgeInsets.all(8), // Added margin for better spacing
       decoration: BoxDecoration(
@@ -202,33 +454,41 @@ class _GameScreenState extends State<GameScreen>
             );
           },
           errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: AppColors.backgroundSecondary,
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.image_not_supported,
-                      color: AppColors.textSecondary,
-                      size: 48,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Image not available',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            );
+            return _buildPlaceholderImage();
           },
         ),
       ),
     );
   }
 
-  Widget _buildSubmitButton(GameProvider gameProvider) {
+  Widget _buildPlaceholderImage() {
+    return Container(
+      color: AppColors.backgroundSecondary,
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.location_on,
+              color: AppColors.primaryAccent,
+              size: 48,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Campus Location',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton(RealtimeGameProvider gameProvider) {
     return AnimatedBuilder(
       animation: _buttonScaleAnimation,
       builder: (context, child) {
@@ -287,20 +547,22 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  void _submitGuess(GameProvider gameProvider) async {
-    if (!mounted) return; // Added mounted check
-    
+  void _submitGuess(RealtimeGameProvider gameProvider) async {
+    if (!mounted || _hasSubmitted) return; // Added mounted check and submission check
+
+    _hasSubmitted = true;
+    _timerService.stopTimer(); // Stop the timer when guess is submitted
+
     _buttonAnimationController.forward().then((_) {
       if (mounted) _buttonAnimationController.reverse();
     });
 
-    final result = await gameProvider.submitGuess();
-    if (result != null && mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => RoundResultScreen(result: result),
-        ),
-      );
+    gameProvider.submitGuess();
+
+    // For realtime provider, we'll listen to the round result stream
+    // The result will be handled by the stream listeners in the provider
+    if (mounted) {
+      _showWaitingForPlayersDialog();
     }
   }
 
@@ -344,10 +606,10 @@ class _GameScreenState extends State<GameScreen>
             ),
             ElevatedButton(
               onPressed: () {
-                final gameProvider = Provider.of<GameProvider>(context, listen: false);
+                final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
                 gameProvider.resetGame();
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/',
                   (route) => false,
                 );
               },

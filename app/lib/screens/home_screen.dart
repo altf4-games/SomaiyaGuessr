@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../providers/game_provider.dart';
+import '../providers/realtime_game_provider.dart';
 import '../utils/theme.dart';
 import 'game_screen.dart';
+import 'lobby_screen.dart';
+import 'realtime_test_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -85,6 +87,8 @@ class _HomeScreenState extends State<HomeScreen>
                 _buildCreateRoomSection(isSmallScreen),
                 SizedBox(height: isSmallScreen ? 20 : 30),
                 _buildJoinRoomSection(isSmallScreen),
+                SizedBox(height: isSmallScreen ? 20 : 30),
+                _buildRealtimeTestButton(),
                 SizedBox(height: isSmallScreen ? 20 : 40),
                 _buildLoadingIndicator(),
                 SizedBox(height: isSmallScreen ? 20 : 40),
@@ -350,8 +354,34 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Widget _buildRealtimeTestButton() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const RealtimeTestScreen()),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          'Realtime Test (Debug)',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLoadingIndicator() {
-    return Consumer<GameProvider>(
+    return Consumer<RealtimeGameProvider>(
       builder: (context, gameProvider, child) {
         if (gameProvider.isLoading) {
           return const CircularProgressIndicator(
@@ -393,12 +423,20 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _playAsGuest() async {
-    final gameProvider = Provider.of<GameProvider>(context, listen: false);
-    await gameProvider.createGuestRoom('Guest Player');
+    final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+
+    // For realtime provider, create a room and join as guest
+    await gameProvider.createRoom('Guest Player');
 
     if (gameProvider.currentRoom != null && mounted) {
+      // Navigate to lobby first, then to game when ready
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const GameScreen()),
+        MaterialPageRoute(
+          builder: (_) => LobbyScreen(
+            roomId: gameProvider.currentRoom!.id,
+            playerName: 'Guest Player',
+          ),
+        ),
       );
     }
   }
@@ -410,16 +448,20 @@ class _HomeScreenState extends State<HomeScreen>
       return;
     }
 
-    final gameProvider = Provider.of<GameProvider>(context, listen: false);
-    await gameProvider.createRoom(
-      _roomNameController.text.trim(),
-      _playerNameController.text.trim(),
-    );
+    final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+    await gameProvider.createRoom(_playerNameController.text.trim());
 
     if (gameProvider.currentRoom != null && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const GameScreen()),
+        MaterialPageRoute(
+          builder: (_) => LobbyScreen(
+            roomId: gameProvider.currentRoom!.id,
+            playerName: _playerNameController.text.trim(),
+          ),
+        ),
       );
+    } else if (gameProvider.error != null) {
+      _showError(gameProvider.error!);
     }
   }
 
@@ -430,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen>
       return;
     }
 
-    final gameProvider = Provider.of<GameProvider>(context, listen: false);
+    final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
     await gameProvider.joinRoom(
       _joinRoomController.text.trim(),
       _playerNameController.text.trim(),
@@ -438,8 +480,15 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (gameProvider.currentRoom != null && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const GameScreen()),
+        MaterialPageRoute(
+          builder: (_) => LobbyScreen(
+            roomId: _joinRoomController.text.trim(),
+            playerName: _playerNameController.text.trim(),
+          ),
+        ),
       );
+    } else if (gameProvider.error != null) {
+      _showError(gameProvider.error!);
     }
   }
 

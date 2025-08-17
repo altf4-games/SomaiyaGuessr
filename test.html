@@ -223,10 +223,18 @@
                             </div>
                             
                             <div class="form-group">
-                                <label>Coordinates (click on image to set):</label>
+                                <label>Coordinates:</label>
                                 <div class="coordinate-input">
-                                    <input type="number" id="coordX" name="coordX" placeholder="X coordinate" required>
-                                    <input type="number" id="coordY" name="coordY" placeholder="Y coordinate" required>
+                                    <input type="number" id="coordX" name="coordX" placeholder="Latitude (e.g., 19.0728)" step="0.000001" required>
+                                    <input type="number" id="coordY" name="coordY" placeholder="Longitude (e.g., 72.8997)" step="0.000001" required>
+                                </div>
+                                <small style="color: #666;">Use Google Maps to find exact coordinates. Right-click on location → "What's here?"</small>
+                                <small style="color: #e74c3c; display: block; margin-top: 4px;"><strong>Note:</strong> coordX = Latitude, coordY = Longitude</small>
+                                <div style="margin-top: 8px;">
+                                    <strong>Sample Somaiya Campus Coordinates:</strong><br>
+                                    <button type="button" onclick="setCoords(19.0728, 72.8997)">Main Gate</button>
+                                    <button type="button" onclick="setCoords(19.0730, 72.9000)">Library</button>
+                                    <button type="button" onclick="setCoords(19.0725, 72.8995)">Engineering Block</button>
                                 </div>
                             </div>
                             
@@ -389,21 +397,19 @@
                     preview.src = e.target.result;
                     preview.style.display = 'block';
                     
-                    // Add click listener to set coordinates
-                    preview.onclick = function(event) {
-                        const rect = preview.getBoundingClientRect();
-                        const x = Math.round(event.clientX - rect.left);
-                        const y = Math.round(event.clientY - rect.top);
-                        
-                        document.getElementById('coordX').value = x;
-                        document.getElementById('coordY').value = y;
-                        
-                        console.log(`Coordinates set: (${x}, ${y})`);
-                    };
+                    // Note: Coordinates should be entered manually as lat/lng
+                    // Use Google Maps to find exact coordinates
                 };
                 reader.readAsDataURL(file);
             }
         });
+
+        // Helper function to set coordinates
+        function setCoords(lat, lng) {
+            document.getElementById('coordX').value = lat;  // coordX = latitude
+            document.getElementById('coordY').value = lng;  // coordY = longitude
+            console.log(`Coordinates set: lat=${lat}, lng=${lng}`);
+        }
         
         // Upload form handling
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
