@@ -315,29 +315,64 @@ class _GameScreenState extends State<GameScreen>
         // which automatically navigates to GameEndScreen when state becomes gameOver
 
         return Scaffold(
+          backgroundColor: AppColors.backgroundPrimary,
           appBar: _buildAppBar(room, player),
-          body: SafeArea( // Added SafeArea for better phone compatibility
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final availableHeight = constraints.maxHeight;
-                final imageHeight = isSmallScreen ? 120.0 : 160.0;
-                final buttonHeight = 56.0; // Fixed button height to prevent overflow
-                final padding = 16.0;
-                final mapHeight = availableHeight - imageHeight - buttonHeight - (padding * 2); // Account for top and bottom padding
-                
-                return Column(
-                  children: [
-                    // Image section - flexible height
-                    if (location != null)
-                      Container(
-                        height: imageHeight,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.backgroundPrimary,
+                  AppColors.backgroundSecondary,
+                ],
+              ),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Image section with modern styling
+                  if (location != null)
+                    Container(
+                      height: isSmallScreen ? 140.0 : 180.0,
+                      margin: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
                         child: _buildLocationImage(location.imageUrl),
                       ),
+                    ),
 
-                    // Map section - takes remaining space
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                  // Map section with modern container
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundCard,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.borderLight,
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
                         child: CampusMap(
                           onTap: (LatLng position) {
                             gameProvider.setGuess(position);
@@ -346,17 +381,15 @@ class _GameScreenState extends State<GameScreen>
                         ),
                       ),
                     ),
+                  ),
 
-                    // Button section - fixed height
-                    Container(
-                      height: buttonHeight,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildSubmitButton(gameProvider),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                );
-              },
+                  // Button section with modern styling
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    child: _buildSubmitButton(gameProvider),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -430,7 +463,7 @@ class _GameScreenState extends State<GameScreen>
         borderRadius: BorderRadius.circular(12), // Consistent border radius
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -498,48 +531,84 @@ class _GameScreenState extends State<GameScreen>
             width: double.infinity, // Full width button for better mobile UX
             height: 48, // Fixed height to prevent overflow
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: gameProvider.hasGuess && !gameProvider.isLoading
-                  ? () => _submitGuess(gameProvider)
+              borderRadius: BorderRadius.circular(20),
+              gradient: gameProvider.hasGuess && !gameProvider.isLoading
+                  ? const LinearGradient(
+                      colors: [
+                        AppColors.primaryGradientStart,
+                        AppColors.primaryGradientEnd,
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    )
                   : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: gameProvider.hasGuess
-                    ? AppColors.primaryAccent
-                    : AppColors.textSecondary.withOpacity(0.5),
-                padding: EdgeInsets.zero, // Remove padding to prevent overflow
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: gameProvider.isLoading
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.backgroundPrimary,
+              color: !gameProvider.hasGuess || gameProvider.isLoading
+                  ? AppColors.backgroundElevated
+                  : null,
+              boxShadow: gameProvider.hasGuess && !gameProvider.isLoading
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primaryAccent.withValues(alpha: 0.4),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: gameProvider.hasGuess && !gameProvider.isLoading
+                    ? () => _submitGuess(gameProvider)
+                    : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (gameProvider.isLoading) ...[
+                        const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ] else if (gameProvider.hasGuess) ...[
+                        const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Text(
+                        gameProvider.isLoading
+                            ? 'Submitting...'
+                            : gameProvider.hasGuess
+                                ? 'SUBMIT GUESS'
+                                : 'TAP ON MAP TO GUESS',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: gameProvider.hasGuess && !gameProvider.isLoading
+                              ? Colors.white
+                              : AppColors.textTertiary,
                         ),
                       ),
-                    )
-                  : Text(
-                      gameProvider.hasGuess ? 'SUBMIT GUESS' : 'TAP ON MAP TO GUESS',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14, // Slightly larger font for better readability
-                        color: AppColors.backgroundPrimary,
-                      ),
-                    ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         );

@@ -71,12 +71,24 @@ class _HomeScreenState extends State<HomeScreen>
     final isSmallScreen = screenHeight < 700;
     
     return Scaffold(
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SingleChildScrollView( // Added scroll view for better mobile compatibility
-            padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0), // Responsive padding
-            child: Column(
+      backgroundColor: AppColors.backgroundPrimary,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundPrimary,
+              AppColors.backgroundSecondary,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SingleChildScrollView( // Added scroll view for better mobile compatibility
+              padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0), // Responsive padding
+              child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(height: isSmallScreen ? 20 : 40), // Responsive spacing
@@ -93,6 +105,7 @@ class _HomeScreenState extends State<HomeScreen>
                 _buildLoadingIndicator(),
                 SizedBox(height: isSmallScreen ? 20 : 40),
               ],
+            ),
             ),
           ),
         ),
@@ -150,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryAccent.withOpacity(0.3),
+                  color: AppColors.primaryAccent.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -185,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen>
                         'Start playing instantly as a guest',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -392,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen>
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.errorRed.withOpacity(0.1),
+              color: AppColors.errorRed.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.errorRed),
             ),

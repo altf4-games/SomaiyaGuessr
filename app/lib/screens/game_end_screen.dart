@@ -115,7 +115,7 @@ class _GameEndScreenState extends State<GameEndScreen>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryAccent.withOpacity(0.3),
+                      color: AppColors.primaryAccent.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -165,13 +165,14 @@ class _GameEndScreenState extends State<GameEndScreen>
             opacity: _scoreAnimation.value,
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.backgroundSecondary,
-                borderRadius: BorderRadius.circular(16),
+                color: AppColors.backgroundCard,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.borderLight, width: 1),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
@@ -181,7 +182,7 @@ class _GameEndScreenState extends State<GameEndScreen>
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryAccent.withOpacity(0.1),
+                      color: AppColors.primaryAccent.withValues(alpha: 0.1),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
                         topRight: Radius.circular(16),
@@ -254,7 +255,7 @@ class _GameEndScreenState extends State<GameEndScreen>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: isWinner 
-                  ? AppColors.primaryAccent.withOpacity(0.1)
+                  ? AppColors.primaryAccent.withValues(alpha: 0.1)
                   : AppColors.backgroundPrimary,
               borderRadius: BorderRadius.circular(12),
               border: isWinner 
@@ -262,7 +263,7 @@ class _GameEndScreenState extends State<GameEndScreen>
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -277,7 +278,7 @@ class _GameEndScreenState extends State<GameEndScreen>
                   decoration: BoxDecoration(
                     color: isWinner 
                         ? AppColors.primaryAccent 
-                        : AppColors.textSecondary.withOpacity(0.2),
+                        : AppColors.textSecondary.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
