@@ -5,36 +5,52 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/game_models.dart';
 
 class SocketService {
-  static const String _baseUrl = 'http://localhost:3000';
-  
+  static const String _baseUrl = 'https://somaiyaguessr.skillversus.xyz';
+
   IO.Socket? _socket;
   bool _isConnected = false;
-  
+
   // Stream controllers for real-time events
-  final StreamController<Map<String, dynamic>> _roomJoinedController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _playerJoinedController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _playerLeftController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _playerReadyController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _gameStartingController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _roundTimerController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _playerGuessedController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _roundEndedController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _newRoundController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _gameFinishedController = StreamController.broadcast();
-  final StreamController<Map<String, dynamic>> _guessResultController = StreamController.broadcast();
-  final StreamController<String> _errorController = StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _roomJoinedController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _playerJoinedController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _playerLeftController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _playerReadyController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _gameStartingController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _roundTimerController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _playerGuessedController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _roundEndedController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _newRoundController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _gameFinishedController =
+      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _guessResultController =
+      StreamController.broadcast();
+  final StreamController<String> _errorController =
+      StreamController.broadcast();
 
   // Getters for streams
   Stream<Map<String, dynamic>> get roomJoined => _roomJoinedController.stream;
-  Stream<Map<String, dynamic>> get playerJoined => _playerJoinedController.stream;
+  Stream<Map<String, dynamic>> get playerJoined =>
+      _playerJoinedController.stream;
   Stream<Map<String, dynamic>> get playerLeft => _playerLeftController.stream;
   Stream<Map<String, dynamic>> get playerReady => _playerReadyController.stream;
-  Stream<Map<String, dynamic>> get gameStarting => _gameStartingController.stream;
+  Stream<Map<String, dynamic>> get gameStarting =>
+      _gameStartingController.stream;
   Stream<Map<String, dynamic>> get roundTimer => _roundTimerController.stream;
-  Stream<Map<String, dynamic>> get playerGuessed => _playerGuessedController.stream;
+  Stream<Map<String, dynamic>> get playerGuessed =>
+      _playerGuessedController.stream;
   Stream<Map<String, dynamic>> get roundEnded => _roundEndedController.stream;
   Stream<Map<String, dynamic>> get newRound => _newRoundController.stream;
-  Stream<Map<String, dynamic>> get gameFinished => _gameFinishedController.stream;
+  Stream<Map<String, dynamic>> get gameFinished =>
+      _gameFinishedController.stream;
   Stream<Map<String, dynamic>> get guessResult => _guessResultController.stream;
   Stream<String> get error => _errorController.stream;
 
@@ -51,10 +67,13 @@ class SocketService {
     }
 
     try {
-      _socket = IO.io(_baseUrl, IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .build());
+      _socket = IO.io(
+        _baseUrl,
+        IO.OptionBuilder()
+            .setTransports(['websocket'])
+            .disableAutoConnect()
+            .build(),
+      );
 
       _socket!.connect();
 
@@ -82,7 +101,6 @@ class SocketService {
 
       // Set up event listeners
       _setupEventListeners();
-
     } catch (e) {
       if (kDebugMode) {
         print('❌ Failed to connect: $e');
@@ -180,7 +198,9 @@ class SocketService {
       if (kDebugMode) {
         print('❌ Server error: $data');
       }
-      final message = data is Map ? data['message'] ?? 'Unknown error' : data.toString();
+      final message = data is Map
+          ? data['message'] ?? 'Unknown error'
+          : data.toString();
       _errorController.add(message);
     });
   }
@@ -192,10 +212,7 @@ class SocketService {
       return;
     }
 
-    _socket!.emit('join-room', {
-      'roomId': roomId,
-      'playerName': playerName,
-    });
+    _socket!.emit('join-room', {'roomId': roomId, 'playerName': playerName});
   }
 
   void setPlayerReady(String roomId, String playerName, bool isReady) {
@@ -217,12 +234,15 @@ class SocketService {
       return;
     }
 
-    _socket!.emit('start-game', {
-      'roomId': roomId,
-    });
+    _socket!.emit('start-game', {'roomId': roomId});
   }
 
-  void submitGuess(String roomId, String playerName, double? guessX, double? guessY) {
+  void submitGuess(
+    String roomId,
+    String playerName,
+    double? guessX,
+    double? guessY,
+  ) {
     if (!_isConnected || _socket == null) {
       _errorController.add('Not connected to server');
       return;
@@ -242,9 +262,7 @@ class SocketService {
       return;
     }
 
-    _socket!.emit('next-round', {
-      'roomId': roomId,
-    });
+    _socket!.emit('next-round', {'roomId': roomId});
   }
 
   void disconnect() {

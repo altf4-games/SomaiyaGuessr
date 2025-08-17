@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String _baseUrl = 'http://localhost:3000/api';
-  
+  static const String _baseUrl = 'https://somaiyaguessr.skillversus.xyz/api';
+
   // Singleton pattern
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;

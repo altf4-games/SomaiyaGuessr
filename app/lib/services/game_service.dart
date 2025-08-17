@@ -20,7 +20,7 @@ class GameService {
   final Uuid _uuid = const Uuid();
 
   // Backend URL - update this to match your backend
-  static const String _backendUrl = 'http://localhost:3000';
+  static const String _backendUrl = 'https://somaiyaguessr.skillversus.xyz';
 
   // Sample Somaiya campus locations
   final List<Location> _somaiyaLocations = [
@@ -64,7 +64,7 @@ class GameService {
   Future<GameRoom> createRoom(String roomName) async {
     final roomId = _uuid.v4();
     final locations = _getRandomLocations(5);
-    
+
     final room = GameRoom(
       id: roomId,
       name: roomName,
@@ -85,7 +85,9 @@ class GameService {
 
     // If room doesn't exist locally, create a mock room for testing
     if (room == null) {
-      print('🏠 GameService: Room $roomId not found locally, creating mock room');
+      print(
+        '🏠 GameService: Room $roomId not found locally, creating mock room',
+      );
       // Generate locations with backend photos
       final locations = await _generateMockLocations();
 
@@ -99,9 +101,13 @@ class GameService {
         locations: locations,
       );
       _globalRooms[roomId] = room;
-      print('✅ GameService: Created mock room with ${room.locations.length} locations');
+      print(
+        '✅ GameService: Created mock room with ${room.locations.length} locations',
+      );
     } else {
-      print('✅ GameService: Found existing room with ${room.players.length} players');
+      print(
+        '✅ GameService: Found existing room with ${room.players.length} players',
+      );
     }
 
     final playerId = _uuid.v4();
@@ -112,7 +118,9 @@ class GameService {
     // Force update the global room storage
     _globalRooms[roomId] = room;
 
-    print('👤 GameService: Added player ${player.name} to room. Total players: ${room.players.length}');
+    print(
+      '👤 GameService: Added player ${player.name} to room. Total players: ${room.players.length}',
+    );
     print('🎮 All players in room $roomId:');
     for (var p in room.players) {
       print('  - ${p.name} (Ready: ${p.isReady})');
@@ -131,7 +139,11 @@ class GameService {
   }
 
   // Update player ready status
-  Future<void> setPlayerReady(String roomId, String playerName, bool isReady) async {
+  Future<void> setPlayerReady(
+    String roomId,
+    String playerName,
+    bool isReady,
+  ) async {
     final room = _globalRooms[roomId];
     if (room == null) {
       throw Exception('Room not found');
@@ -208,10 +220,13 @@ class GameService {
     final totalPlayers = room.players.length;
 
     // Round is complete if all players submitted OR timer expired
-    final allSubmitted = submittedPlayers.length >= totalPlayers && totalPlayers > 0;
+    final allSubmitted =
+        submittedPlayers.length >= totalPlayers && totalPlayers > 0;
     final timerExpired = getRoomTimeLeft(roomId) <= 0;
 
-    print('🎮 Round check for $roomId: ${submittedPlayers.length}/$totalPlayers submitted, timer: ${getRoomTimeLeft(roomId)}s');
+    print(
+      '🎮 Round check for $roomId: ${submittedPlayers.length}/$totalPlayers submitted, timer: ${getRoomTimeLeft(roomId)}s',
+    );
     print('   - allSubmitted: $allSubmitted, timerExpired: $timerExpired');
     print('   - submitted players: ${submittedPlayers.toList()}');
 
@@ -228,7 +243,9 @@ class GameService {
   // Fetch random photo from backend
   Future<Map<String, dynamic>?> _fetchRandomPhoto() async {
     try {
-      final response = await http.get(Uri.parse('$_backendUrl/api/random-photo'));
+      final response = await http.get(
+        Uri.parse('$_backendUrl/api/random-photo'),
+      );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('📸 Fetched photo: ${data['location']} - ${data['imageUrl']}');
@@ -251,25 +268,31 @@ class GameService {
 
       if (photoData != null && photoData['photo'] != null) {
         final photo = photoData['photo'];
-        locations.add(Location(
-          id: photo['id']?.toString() ?? i.toString(),
-          name: photo['location'] ?? 'Campus Location $i',
-          coordinates: LatLng(
-            photo['lat']?.toDouble() ?? (19.0760 + (i * 0.001)),
-            photo['lng']?.toDouble() ?? (72.8777 + (i * 0.001))
+        locations.add(
+          Location(
+            id: photo['id']?.toString() ?? i.toString(),
+            name: photo['location'] ?? 'Campus Location $i',
+            coordinates: LatLng(
+              photo['lat']?.toDouble() ?? (19.0760 + (i * 0.001)),
+              photo['lng']?.toDouble() ?? (72.8777 + (i * 0.001)),
+            ),
+            imageUrl:
+                photo['imageUrl'] ??
+                'https://via.placeholder.com/400x300?text=Location+$i',
+            description: photo['description'] ?? 'Campus location $i',
           ),
-          imageUrl: photo['imageUrl'] ?? 'https://via.placeholder.com/400x300?text=Location+$i',
-          description: photo['description'] ?? 'Campus location $i',
-        ));
+        );
       } else {
         // Fallback to mock data if backend is not available
-        locations.add(Location(
-          id: i.toString(),
-          name: 'Campus Location $i',
-          coordinates: LatLng(19.0760 + (i * 0.001), 72.8777 + (i * 0.001)),
-          imageUrl: 'https://via.placeholder.com/400x300?text=Location+$i',
-          description: 'Campus location $i',
-        ));
+        locations.add(
+          Location(
+            id: i.toString(),
+            name: 'Campus Location $i',
+            coordinates: LatLng(19.0760 + (i * 0.001), 72.8777 + (i * 0.001)),
+            imageUrl: 'https://via.placeholder.com/400x300?text=Location+$i',
+            description: 'Campus location $i',
+          ),
+        );
       }
     }
 
@@ -315,7 +338,9 @@ class GameService {
     _globalPlayersSubmitted[roomId] ??= {};
     _globalPlayersSubmitted[roomId]!.add(playerId);
 
-    print('🎮 Player $playerId submitted guess for room $roomId. Total submitted: ${_globalPlayersSubmitted[roomId]!.length}/${room.players.length}');
+    print(
+      '🎮 Player $playerId submitted guess for room $roomId. Total submitted: ${_globalPlayersSubmitted[roomId]!.length}/${room.players.length}',
+    );
 
     double distance = 0;
     int score = 0;
@@ -409,22 +434,28 @@ class GameService {
     if (distanceInMeters <= 5) return maxPoints;
 
     // Excellent accuracy (5-15 meters) = 800-900 points
-    if (distanceInMeters <= 15) return (900 - ((distanceInMeters - 5) / 10) * 100).round();
+    if (distanceInMeters <= 15)
+      return (900 - ((distanceInMeters - 5) / 10) * 100).round();
 
     // Good accuracy (15-30 meters) = 600-800 points
-    if (distanceInMeters <= 30) return (800 - ((distanceInMeters - 15) / 15) * 200).round();
+    if (distanceInMeters <= 30)
+      return (800 - ((distanceInMeters - 15) / 15) * 200).round();
 
     // Fair accuracy (30-60 meters) = 300-600 points
-    if (distanceInMeters <= 60) return (600 - ((distanceInMeters - 30) / 30) * 300).round();
+    if (distanceInMeters <= 60)
+      return (600 - ((distanceInMeters - 30) / 30) * 300).round();
 
     // Poor accuracy (60-100 meters) = 100-300 points
-    if (distanceInMeters <= 100) return (300 - ((distanceInMeters - 60) / 40) * 200).round();
+    if (distanceInMeters <= 100)
+      return (300 - ((distanceInMeters - 60) / 40) * 200).round();
 
     // Very poor accuracy (100-200 meters) = 50-100 points
-    if (distanceInMeters <= 200) return (100 - ((distanceInMeters - 100) / 100) * 50).round();
+    if (distanceInMeters <= 200)
+      return (100 - ((distanceInMeters - 100) / 100) * 50).round();
 
     // Terrible accuracy (200+ meters) = 0-50 points
-    if (distanceInMeters <= 500) return (50 - ((distanceInMeters - 200) / 300) * 50).round();
+    if (distanceInMeters <= 500)
+      return (50 - ((distanceInMeters - 200) / 300) * 50).round();
 
     // Beyond 500 meters = 0 points
     return 0;

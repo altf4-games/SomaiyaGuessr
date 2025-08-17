@@ -64,21 +64,27 @@ class _RealtimeTestScreenState extends State<RealtimeTestScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: provider.isLoading ? null : () {
-                            provider.createRoom(_playerNameController.text.trim());
-                          },
+                          onPressed: provider.isLoading
+                              ? null
+                              : () {
+                                  provider.createRoom(
+                                    _playerNameController.text.trim(),
+                                  );
+                                },
                           child: const Text('Create Room'),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: provider.isLoading ? null : () {
-                            provider.joinRoom(
-                              _roomIdController.text.trim(),
-                              _playerNameController.text.trim(),
-                            );
-                          },
+                          onPressed: provider.isLoading
+                              ? null
+                              : () {
+                                  provider.joinRoom(
+                                    _roomIdController.text.trim(),
+                                    _playerNameController.text.trim(),
+                                  );
+                                },
                           child: const Text('Join Room'),
                         ),
                       ),
@@ -102,20 +108,36 @@ class _RealtimeTestScreenState extends State<RealtimeTestScreen> {
                             ),
                           ),
                           Text('State: ${room.state}'),
-                          Text('Round: ${room.currentRound}/${room.totalRounds}'),
+                          Text(
+                            'Round: ${room.currentRound}/${room.totalRounds}',
+                          ),
                           Text('Players: ${room.players.length}'),
                           Text('Timer: ${provider.timeLeft}s'),
                           const SizedBox(height: 8),
-                          Text('Player List:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                          ...room.players.map((player) => Text('  - ${player.name} (Score: ${player.totalScore})')),
+                          Text(
+                            'Player List:',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          ...room.players.map(
+                            (player) => Text(
+                              '  - ${player.name} (Score: ${player.totalScore})',
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
+                              color: Colors.green.withOpacity(
+                                0.1.clamp(0.0, 1.0),
+                              ),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text('✅ Socket Connected', style: TextStyle(color: Colors.green)),
+                            child: Text(
+                              '✅ Socket Connected',
+                              style: TextStyle(color: Colors.green),
+                            ),
                           ),
                         ],
                       ),
@@ -141,7 +163,9 @@ class _RealtimeTestScreenState extends State<RealtimeTestScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text('Name: ${location.name}'),
-                          Text('Coordinates: ${location.coordinates.latitude}, ${location.coordinates.longitude}'),
+                          Text(
+                            'Coordinates: ${location.coordinates.latitude}, ${location.coordinates.longitude}',
+                          ),
                           const SizedBox(height: 16),
                           Container(
                             height: 200,
@@ -155,18 +179,23 @@ class _RealtimeTestScreenState extends State<RealtimeTestScreen> {
                               child: Image.network(
                                 location.imageUrl,
                                 fit: BoxFit.cover,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                },
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    },
                                 errorBuilder: (context, error, stackTrace) {
                                   return Center(
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        const Icon(Icons.error, color: Colors.red),
+                                        const Icon(
+                                          Icons.error,
+                                          color: Colors.red,
+                                        ),
                                         const SizedBox(height: 8),
                                         Text('Failed to load image'),
                                         Text('URL: ${location.imageUrl}'),
@@ -196,11 +225,14 @@ class _RealtimeTestScreenState extends State<RealtimeTestScreen> {
                             child: const Text('Ready'),
                           ),
                         ),
-                      if (room.state.toString().contains('waiting') && room.players.every((p) => p.isReady))
+                      if (room.state.toString().contains('waiting') &&
+                          room.players.every((p) => p.isReady))
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () => provider.startGame(),
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
                             child: const Text('Start Game'),
                           ),
                         ),
@@ -231,7 +263,7 @@ class _RealtimeTestScreenState extends State<RealtimeTestScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withOpacity(0.1.clamp(0.0, 1.0)),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.red),
                     ),

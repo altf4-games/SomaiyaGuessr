@@ -29,33 +29,25 @@ class _GameEndScreenState extends State<GameEndScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _confettiController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
     );
-    
+
     _scoreController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
-    _confettiAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _confettiController,
-      curve: Curves.easeOut,
-    ));
-    
-    _scoreAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _scoreController,
-      curve: Curves.elasticOut,
-    ));
-    
+
+    _confettiAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _confettiController, curve: Curves.easeOut),
+    );
+
+    _scoreAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _scoreController, curve: Curves.elasticOut),
+    );
+
     // Start animations
     _confettiController.forward();
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -81,16 +73,14 @@ class _GameEndScreenState extends State<GameEndScreen>
             children: [
               // Header
               _buildHeader(),
-              
+
               const SizedBox(height: 30),
-              
+
               // Scores List
-              Expanded(
-                child: _buildScoresList(),
-              ),
-              
+              Expanded(child: _buildScoresList()),
+
               const SizedBox(height: 30),
-              
+
               // Action Buttons
               _buildActionButtons(),
             ],
@@ -130,9 +120,9 @@ class _GameEndScreenState extends State<GameEndScreen>
             );
           },
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         Text(
           'Game Complete!',
           style: GoogleFonts.poppins(
@@ -141,9 +131,9 @@ class _GameEndScreenState extends State<GameEndScreen>
             color: AppColors.textPrimary,
           ),
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         Text(
           'Room: ${widget.roomName}',
           style: GoogleFonts.poppins(
@@ -162,7 +152,7 @@ class _GameEndScreenState extends State<GameEndScreen>
         return Transform.translate(
           offset: Offset(0, 50 * (1 - _scoreAnimation.value)),
           child: Opacity(
-            opacity: _scoreAnimation.value,
+            opacity: _scoreAnimation.value.clamp(0.0, 1.0),
             child: Container(
               decoration: BoxDecoration(
                 color: AppColors.backgroundCard,
@@ -207,7 +197,7 @@ class _GameEndScreenState extends State<GameEndScreen>
                       ],
                     ),
                   ),
-                  
+
                   // Scores
                   Expanded(
                     child: ListView.builder(
@@ -216,7 +206,7 @@ class _GameEndScreenState extends State<GameEndScreen>
                       itemBuilder: (context, index) {
                         final score = widget.finalScores[index];
                         final isWinner = index == 0;
-                        
+
                         return _buildScoreItem(
                           rank: index + 1,
                           playerName: score['name'] as String,
@@ -254,11 +244,11 @@ class _GameEndScreenState extends State<GameEndScreen>
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isWinner 
+              color: isWinner
                   ? AppColors.primaryAccent.withValues(alpha: 0.1)
                   : AppColors.backgroundPrimary,
               borderRadius: BorderRadius.circular(12),
-              border: isWinner 
+              border: isWinner
                   ? Border.all(color: AppColors.primaryAccent, width: 2)
                   : null,
               boxShadow: [
@@ -276,8 +266,8 @@ class _GameEndScreenState extends State<GameEndScreen>
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isWinner 
-                        ? AppColors.primaryAccent 
+                    color: isWinner
+                        ? AppColors.primaryAccent
                         : AppColors.textSecondary.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
@@ -297,9 +287,9 @@ class _GameEndScreenState extends State<GameEndScreen>
                           ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 16),
-                
+
                 // Player Name
                 Expanded(
                   child: Text(
@@ -311,15 +301,15 @@ class _GameEndScreenState extends State<GameEndScreen>
                     ),
                   ),
                 ),
-                
+
                 // Score
                 Text(
                   '$score pts',
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isWinner 
-                        ? AppColors.primaryAccent 
+                    color: isWinner
+                        ? AppColors.primaryAccent
                         : AppColors.textPrimary,
                   ),
                 ),
@@ -357,9 +347,9 @@ class _GameEndScreenState extends State<GameEndScreen>
             ),
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Return to Home Button
         SizedBox(
           width: double.infinity,
@@ -388,17 +378,11 @@ class _GameEndScreenState extends State<GameEndScreen>
 
   void _playAgain() {
     // Navigate back to home screen to create/join a new room
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      '/',
-      (route) => false,
-    );
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }
 
   void _returnToHome() {
     // Navigate back to home screen
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      '/',
-      (route) => false,
-    );
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }
 }

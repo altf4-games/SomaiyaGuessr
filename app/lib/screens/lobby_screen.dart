@@ -102,7 +102,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
           if (isLoading) {
             return const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.primaryAccent,
+                ),
               ),
             );
           }
@@ -121,9 +123,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   _buildCountdownCard(),
 
                 // Players list
-                Expanded(
-                  child: _buildPlayersList(players),
-                ),
+                Expanded(child: _buildPlayersList(players)),
 
                 const SizedBox(height: 20),
 
@@ -133,7 +133,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 const SizedBox(height: 10),
 
                 // Start game button (for room creator)
-                if (players.isNotEmpty && players.first.name == widget.playerName)
+                if (players.isNotEmpty &&
+                    players.first.name == widget.playerName)
                   _buildStartGameButton(provider, players),
               ],
             ),
@@ -182,9 +183,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryAccent.withOpacity(0.1),
+                    color: AppColors.primaryAccent.withOpacity(
+                      0.1.clamp(0.0, 1.0),
+                    ),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.primaryAccent),
                   ),
@@ -242,7 +248,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: AppColors.primaryAccent.withOpacity(0.1),
+        color: AppColors.primaryAccent.withOpacity(0.1.clamp(0.0, 1.0)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.primaryAccent),
       ),
@@ -307,15 +313,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     itemBuilder: (context, index) {
                       final player = players[index];
                       final isCurrentPlayer = player.name == widget.playerName;
-                      
+
                       return Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: isCurrentPlayer 
-                              ? AppColors.primaryAccent.withOpacity(0.1)
+                          color: isCurrentPlayer
+                              ? AppColors.primaryAccent.withOpacity(
+                                  0.1.clamp(0.0, 1.0),
+                                )
                               : Colors.transparent,
                         ),
                         child: Row(
@@ -364,8 +372,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: player.isReady
-                                    ? Colors.green.withOpacity(0.2)
-                                    : Colors.orange.withOpacity(0.2),
+                                    ? Colors.green.withOpacity(
+                                        0.2.clamp(0.0, 1.0),
+                                      )
+                                    : Colors.orange.withOpacity(
+                                        0.2.clamp(0.0, 1.0),
+                                      ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -403,43 +415,40 @@ class _LobbyScreenState extends State<LobbyScreen> {
         backgroundColor: _isReady ? Colors.green : AppColors.primaryAccent,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: Text(
         _isReady ? 'Ready!' : 'Mark as Ready',
-        style: GoogleFonts.poppins(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
+        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     );
   }
 
-  Widget _buildStartGameButton(RealtimeGameProvider provider, List<Player> players) {
+  Widget _buildStartGameButton(
+    RealtimeGameProvider provider,
+    List<Player> players,
+  ) {
     final allReady = players.every((player) => player.isReady);
     final canStart = players.isNotEmpty && allReady;
 
     return ElevatedButton(
-      onPressed: canStart ? () {
-        // Start the game via realtime provider
-        provider.startGame();
-      } : null,
+      onPressed: canStart
+          ? () {
+              // Start the game via realtime provider
+              provider.startGame();
+            }
+          : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: canStart ? AppColors.successGreen : AppColors.textSecondary,
+        backgroundColor: canStart
+            ? AppColors.successGreen
+            : AppColors.textSecondary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: Text(
         canStart ? 'Start Game' : 'Waiting for all players to be ready',
-        style: GoogleFonts.poppins(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
+        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     );
   }

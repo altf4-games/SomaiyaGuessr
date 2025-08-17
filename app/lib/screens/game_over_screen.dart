@@ -23,35 +23,27 @@ class _GameOverScreenState extends State<GameOverScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     _scoreController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
 
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
     final finalScore = gameProvider.currentPlayer?.totalScore ?? 0;
 
-    _scoreAnimation = IntTween(
-      begin: 0,
-      end: finalScore,
-    ).animate(CurvedAnimation(
-      parent: _scoreController,
-      curve: Curves.easeOutCubic,
-    ));
+    _scoreAnimation = IntTween(begin: 0, end: finalScore).animate(
+      CurvedAnimation(parent: _scoreController, curve: Curves.easeOutCubic),
+    );
 
     _fadeController.forward();
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -106,11 +98,8 @@ class _GameOverScreenState extends State<GameOverScreen>
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.primaryAccent.withOpacity(0.2),
-            border: Border.all(
-              color: AppColors.primaryAccent,
-              width: 3,
-            ),
+            color: AppColors.primaryAccent.withOpacity(0.2.clamp(0.0, 1.0)),
+            border: Border.all(color: AppColors.primaryAccent, width: 3),
           ),
           child: const Icon(
             Icons.emoji_events,
@@ -150,7 +139,7 @@ class _GameOverScreenState extends State<GameOverScreen>
         color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.primaryAccent.withOpacity(0.3),
+          color: AppColors.primaryAccent.withOpacity(0.3.clamp(0.0, 1.0)),
           width: 2,
         ),
       ),
@@ -282,14 +271,14 @@ class _GameOverScreenState extends State<GameOverScreen>
   void _playAgain(GameProvider gameProvider) async {
     final currentRoom = gameProvider.currentRoom;
     final currentPlayer = gameProvider.currentPlayer;
-    
+
     if (currentRoom != null && currentPlayer != null) {
       gameProvider.resetGame();
       await gameProvider.createRoom(
         '${currentRoom.name} - New Game',
         currentPlayer.name,
       );
-      
+
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const GameScreen()),
