@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/game_provider.dart';
 import '../utils/theme.dart';
-import 'home_screen.dart';
 import 'game_screen.dart';
 
 class GameOverScreen extends StatefulWidget {
@@ -290,9 +289,6 @@ class _GameOverScreenState extends State<GameOverScreen>
 
   void _backToHome(GameProvider gameProvider) {
     gameProvider.resetGame();
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-      (route) => false,
-    );
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }
 }
