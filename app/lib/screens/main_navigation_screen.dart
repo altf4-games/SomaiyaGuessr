@@ -22,21 +22,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       body: _screens[_currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              AppColors.backgroundSecondary,
-              AppColors.backgroundPrimary,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+          color: AppColors.backgroundTertiary,
+          border: Border(
+            top: BorderSide(color: AppColors.brutalistBorder, width: 4),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
-            ),
-          ],
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
@@ -48,36 +37,61 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          selectedItemColor: AppColors.primaryAccent,
+          selectedItemColor: AppColors.brutalistPurple,
           unselectedItemColor: AppColors.textSecondary,
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
+          selectedLabelStyle: GoogleFonts.spaceGrotesk(
+            fontWeight: FontWeight.w900,
             fontSize: 12,
+            letterSpacing: 1,
           ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontWeight: FontWeight.w400,
+          unselectedLabelStyle: GoogleFonts.spaceGrotesk(
+            fontWeight: FontWeight.w600,
             fontSize: 12,
           ),
           items: [
             BottomNavigationBarItem(
               icon: Container(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.all(8),
+                decoration: _currentIndex == 0
+                    ? BoxDecoration(
+                        color: AppColors.brutalistYellow,
+                        border: Border.all(
+                          color: AppColors.brutalistBorder,
+                          width: 3,
+                        ),
+                      )
+                    : null,
                 child: Icon(
                   _currentIndex == 0 ? Icons.home : Icons.home_outlined,
                   size: 24,
+                  color: _currentIndex == 0
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
                 ),
               ),
-              label: 'Home',
+              label: 'HOME',
             ),
             BottomNavigationBarItem(
               icon: Container(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.all(8),
+                decoration: _currentIndex == 1
+                    ? BoxDecoration(
+                        color: AppColors.brutalistPurple,
+                        border: Border.all(
+                          color: AppColors.brutalistBorder,
+                          width: 3,
+                        ),
+                      )
+                    : null,
                 child: Icon(
                   _currentIndex == 1 ? Icons.settings : Icons.settings_outlined,
                   size: 24,
+                  color: _currentIndex == 1
+                      ? AppColors.backgroundTertiary
+                      : AppColors.textSecondary,
                 ),
               ),
-              label: 'Settings',
+              label: 'SETTINGS',
             ),
           ],
         ),

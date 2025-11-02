@@ -10,106 +10,55 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text(
-          'Settings',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.backgroundPrimary,
+            border: Border.all(color: AppColors.brutalistBorder, width: 3),
+          ),
+          child: Text(
+            'SETTINGS',
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: 2,
+            ),
           ),
         ),
-        backgroundColor: AppColors.backgroundSecondary,
+        backgroundColor: AppColors.brutalistPurple,
         elevation: 0,
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4),
+          child: Container(color: AppColors.brutalistBorder, height: 4),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         children: [
-          _buildSection('Game Settings', [
+          _buildSection('ABOUT', [
             _buildSettingTile(
-              icon: Icons.volume_up,
-              title: 'Sound Effects',
-              subtitle: 'Enable game sound effects',
-              trailing: Switch(
-                value: true,
-                onChanged: (value) {
-                  // TODO: Implement sound settings
-                },
-                activeColor: AppColors.primaryAccent,
-              ),
-            ),
-            _buildSettingTile(
-              icon: Icons.timer,
-              title: 'Round Timer',
-              subtitle: 'Default time per round',
-              trailing: Text(
-                '30s',
-                style: GoogleFonts.poppins(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              onTap: () {
-                // TODO: Show timer selection dialog
-              },
-            ),
-            _buildSettingTile(
-              icon: Icons.notifications,
-              title: 'Notifications',
-              subtitle: 'Game and room notifications',
-              trailing: Switch(
-                value: true,
-                onChanged: (value) {
-                  // TODO: Implement notification settings
-                },
-                activeColor: AppColors.primaryAccent,
-              ),
-            ),
-          ]),
-          const SizedBox(height: 24),
-          _buildSection('App Settings', [
-            _buildSettingTile(
-              icon: Icons.dark_mode,
-              title: 'Dark Theme',
-              subtitle: 'Always enabled for better experience',
-              trailing: Icon(Icons.check, color: AppColors.successGreen),
-            ),
-            _buildSettingTile(
-              icon: Icons.language,
-              title: 'Language',
-              subtitle: 'English',
-              trailing: Icon(
-                Icons.arrow_forward_ios,
-                color: AppColors.textSecondary,
-                size: 16,
-              ),
-              onTap: () {
-                // TODO: Show language selection
-              },
-            ),
-          ]),
-          const SizedBox(height: 24),
-          _buildSection('About', [
-            _buildSettingTile(
+              context: context,
               icon: Icons.info,
-              title: 'About Somaiya Guessr',
+              title: 'ABOUT SOMAIYA GUESSR',
               subtitle: 'Version 1.0.0',
+              color: AppColors.brutalistCyan,
               onTap: () {
                 _showAboutDialog(context);
               },
             ),
+          ]),
+          const SizedBox(height: 24),
+          _buildSection('HELP', [
             _buildSettingTile(
+              context: context,
               icon: Icons.help,
-              title: 'How to Play',
+              title: 'HOW TO PLAY',
               subtitle: 'Learn the game rules',
+              color: AppColors.brutalistGreen,
               onTap: () {
                 _showHowToPlay(context);
-              },
-            ),
-            _buildSettingTile(
-              icon: Icons.feedback,
-              title: 'Send Feedback',
-              subtitle: 'Help us improve the game',
-              onTap: () {
-                // TODO: Implement feedback functionality
               },
             ),
           ]),
@@ -122,92 +71,188 @@ class SettingsScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16, bottom: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: AppColors.brutalistYellow,
+            border: Border.all(color: AppColors.brutalistBorder, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadowColor,
+                offset: const Offset(4, 4),
+                blurRadius: 0,
+              ),
+            ],
+          ),
           child: Text(
             title,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.spaceGrotesk(
               fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryAccent,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: 1,
             ),
           ),
         ),
-        Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(children: children),
-        ),
+        ...children,
       ],
     );
   }
 
   Widget _buildSettingTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
-    Widget? trailing,
+    required Color color,
     VoidCallback? onTap,
   }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.primaryAccent.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: AppColors.primaryAccent, size: 20),
-      ),
-      title: Text(
-        title,
-        style: GoogleFonts.poppins(
-          fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: GoogleFonts.poppins(
-          fontSize: 12,
-          color: AppColors.textSecondary,
-        ),
-      ),
-      trailing: trailing,
+    return GestureDetector(
       onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: AppTheme.brutalistContainer(
+          backgroundColor: AppColors.backgroundTertiary,
+          addShadow: true,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                border: Border.all(color: AppColors.brutalistBorder, width: 3),
+              ),
+              child: Icon(icon, color: AppColors.textPrimary, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.spaceGrotesk(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.spaceGrotesk(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward, color: AppColors.textPrimary, size: 24),
+          ],
+        ),
+      ),
     );
   }
 
   void _showAboutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.backgroundSecondary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'About Somaiya Guessr',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: AppTheme.brutalistContainer(
+            backgroundColor: AppColors.backgroundTertiary,
+            addShadow: true,
           ),
-        ),
-        content: Text(
-          'Somaiya Guessr is a location guessing game focused on the Somaiya campus. Test your knowledge of campus locations and compete with friends!\n\nVersion 1.0.0',
-          style: GoogleFonts.poppins(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'OK',
-              style: GoogleFonts.poppins(
-                color: AppColors.primaryAccent,
-                fontWeight: FontWeight.w500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.brutalistCyan,
+                  border: Border.all(
+                    color: AppColors.brutalistBorder,
+                    width: 3,
+                  ),
+                ),
+                child: Text(
+                  'ABOUT',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 2,
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 24),
+              Text(
+                'Somaiya Guessr is a location guessing game focused on the Somaiya campus. Test your knowledge of campus locations and compete with friends!',
+                style: GoogleFonts.spaceGrotesk(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.brutalistPink,
+                  border: Border.all(
+                    color: AppColors.brutalistBorder,
+                    width: 2,
+                  ),
+                ),
+                child: Text(
+                  'VERSION 1.0.0',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: AppTheme.brutalistButton(
+                    backgroundColor: AppColors.brutalistGreen,
+                  ),
+                  child: Center(
+                    child: Text(
+                      'GOT IT!',
+                      style: GoogleFonts.spaceGrotesk(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -215,67 +260,113 @@ class SettingsScreen extends StatelessWidget {
   void _showHowToPlay(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.backgroundSecondary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'How to Play',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: AppTheme.brutalistContainer(
+            backgroundColor: AppColors.backgroundTertiary,
+            addShadow: true,
           ),
-        ),
-        content: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildRule('1.', 'Create or join a room to play with friends'),
-              _buildRule('2.', 'Look at the campus location image shown'),
-              _buildRule(
-                '3.',
-                'Tap on the map where you think the location is',
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.brutalistGreen,
+                  border: Border.all(
+                    color: AppColors.brutalistBorder,
+                    width: 3,
+                  ),
+                ),
+                child: Text(
+                  'HOW TO PLAY',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 2,
+                  ),
+                ),
               ),
-              _buildRule('4.', 'Submit your guess before time runs out'),
-              _buildRule('5.', 'Get points based on how close your guess is'),
-              _buildRule('6.', 'Player with the highest total score wins!'),
+              const SizedBox(height: 24),
+              _buildRule('1', 'Create or join a room'),
+              _buildRule('2', 'Look at the campus location image'),
+              _buildRule('3', 'Tap on the map where you think it is'),
+              _buildRule('4', 'Submit your guess before time runs out'),
+              _buildRule('5', 'Get points based on accuracy'),
+              _buildRule('6', 'Highest total score wins!'),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: AppTheme.brutalistButton(
+                    backgroundColor: AppColors.brutalistOrange,
+                  ),
+                  child: Center(
+                    child: Text(
+                      'GOT IT!',
+                      style: GoogleFonts.spaceGrotesk(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Got it!',
-              style: GoogleFonts.poppins(
-                color: AppColors.primaryAccent,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildRule(String number, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        border: Border.all(color: AppColors.brutalistBorder, width: 2),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            number,
-            style: GoogleFonts.poppins(
-              color: AppColors.primaryAccent,
-              fontWeight: FontWeight.w600,
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppColors.brutalistYellow,
+              border: Border.all(color: AppColors.brutalistBorder, width: 2),
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: GoogleFonts.spaceGrotesk(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
-              style: GoogleFonts.poppins(color: AppColors.textSecondary),
+              style: GoogleFonts.spaceGrotesk(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
             ),
           ),
         ],

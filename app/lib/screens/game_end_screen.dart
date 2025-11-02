@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import '../utils/theme.dart';
-import '../providers/realtime_game_provider.dart';
-import '../models/game_models.dart';
 
 class GameEndScreen extends StatefulWidget {
   final List<Map<String, dynamic>> finalScores;
@@ -154,17 +151,9 @@ class _GameEndScreenState extends State<GameEndScreen>
           child: Opacity(
             opacity: _scoreAnimation.value.clamp(0.0, 1.0),
             child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.backgroundCard,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.borderLight, width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+              decoration: AppTheme.brutalistContainer(
+                backgroundColor: AppColors.backgroundTertiary,
+                addShadow: true,
               ),
               child: Column(
                 children: [

@@ -6,13 +6,10 @@ require("dotenv").config();
 
 const PORT = process.env.PORT || 3000;
 
-// Connect to database
 connectDB();
 
-// Create HTTP server
 const server = require("http").createServer(app);
 
-// Initialize Socket.io
 const io = require("socket.io")(server, {
   cors: {
     origin: "*",
@@ -20,7 +17,6 @@ const io = require("socket.io")(server, {
   },
 });
 
-// Handle socket connections
 socketHandler(io);
 
 server.listen(PORT, () => {

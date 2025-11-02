@@ -17,8 +17,7 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen>
-    with TickerProviderStateMixin {
+class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   late AnimationController _buttonAnimationController;
   late Animation<double> _buttonScaleAnimation;
   final TimerService _timerService = TimerService();
@@ -32,13 +31,12 @@ class _GameScreenState extends State<GameScreen>
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _buttonScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _buttonAnimationController,
-      curve: Curves.easeInOut,
-    ));
+    _buttonScaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(
+        parent: _buttonAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
 
     // Setup timer polling to get shared timer value
     Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -47,7 +45,10 @@ class _GameScreenState extends State<GameScreen>
         return;
       }
 
-      final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+      final gameProvider = Provider.of<RealtimeGameProvider>(
+        context,
+        listen: false,
+      );
 
       // For realtime provider, we'll use the timeLeft from the provider directly
       final newTimeLeft = gameProvider.timeLeft;
@@ -69,7 +70,10 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _setupRoundListeners() {
-    final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+    final gameProvider = Provider.of<RealtimeGameProvider>(
+      context,
+      listen: false,
+    );
 
     // Listen for round completion events
     gameProvider.roomStream.listen((room) {
@@ -101,14 +105,19 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _autoSubmitGuess() async {
-    final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+    final gameProvider = Provider.of<RealtimeGameProvider>(
+      context,
+      listen: false,
+    );
     if (!_hasSubmitted) {
       _hasSubmitted = true;
 
       // If no guess was made, set coordinates to 0,0 for 0 points
       if (gameProvider.currentGuess == null) {
         gameProvider.setGuess(const LatLng(0, 0));
-        print('⏰ Timer expired - auto-submitting with 0,0 coordinates for 0 points');
+        print(
+          '⏰ Timer expired - auto-submitting with 0,0 coordinates for 0 points',
+        );
       }
 
       // Submit the guess but don't auto-advance - wait for all players
@@ -180,18 +189,13 @@ class _GameScreenState extends State<GameScreen>
     if (finalScores != null && finalScores.isNotEmpty) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => GameEndScreen(
-            finalScores: finalScores,
-            roomName: roomName,
-          ),
+          builder: (context) =>
+              GameEndScreen(finalScores: finalScores, roomName: roomName),
         ),
       );
     } else {
       // Fallback if no scores available
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        '/',
-        (route) => false,
-      );
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
     }
   }
 
@@ -214,14 +218,14 @@ class _GameScreenState extends State<GameScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppColors.primaryAccent,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
               'Please wait while other players complete their guesses...',
-              style: GoogleFonts.poppins(
-                color: AppColors.textSecondary,
-              ),
+              style: GoogleFonts.poppins(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -248,18 +252,14 @@ class _GameScreenState extends State<GameScreen>
         ),
         content: Text(
           'Your guess has been automatically submitted.',
-          style: GoogleFonts.poppins(
-            color: AppColors.textSecondary,
-          ),
+          style: GoogleFonts.poppins(color: AppColors.textSecondary),
         ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'OK',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-              ),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -276,10 +276,17 @@ class _GameScreenState extends State<GameScreen>
 
   void _startGameIfNeeded() async {
     if (!mounted) return;
-    final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
+    final gameProvider = Provider.of<RealtimeGameProvider>(
+      context,
+      listen: false,
+    );
 
-    print('🎮 Game screen: Current room state: ${gameProvider.currentRoom?.state}');
-    print('🎮 Game screen: Current location: ${gameProvider.currentLocation?.name}');
+    print(
+      '🎮 Game screen: Current room state: ${gameProvider.currentRoom?.state}',
+    );
+    print(
+      '🎮 Game screen: Current location: ${gameProvider.currentLocation?.name}',
+    );
 
     // For realtime provider, the game is already started via socket events
     // No need to call startGame() here
@@ -294,7 +301,7 @@ class _GameScreenState extends State<GameScreen>
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenHeight < 700;
-    
+
     return Consumer<RealtimeGameProvider>(
       builder: (context, gameProvider, child) {
         final room = gameProvider.currentRoom;
@@ -305,7 +312,9 @@ class _GameScreenState extends State<GameScreen>
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.primaryAccent,
+                ),
               ),
             ),
           );
@@ -356,23 +365,14 @@ class _GameScreenState extends State<GameScreen>
                   Expanded(
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.backgroundCard,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppColors.borderLight,
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                      decoration: AppTheme.brutalistContainer(
+                        backgroundColor: AppColors.backgroundTertiary,
+                        addShadow: true,
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(
+                          0,
+                        ), // No rounded corners in brutalism
                         child: CampusMap(
                           onTap: (LatLng position) {
                             gameProvider.setGuess(position);
@@ -429,7 +429,10 @@ class _GameScreenState extends State<GameScreen>
         const SizedBox(width: 8),
         // Score widget
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Reduced padding
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 6,
+          ), // Reduced padding
           margin: const EdgeInsets.only(right: 12),
           decoration: BoxDecoration(
             color: AppColors.primaryAccent,
@@ -455,40 +458,108 @@ class _GameScreenState extends State<GameScreen>
   }
 
   Widget _buildLocationImage(String imageUrl) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.all(8), // Added margin for better spacing
-      decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(12), // Consistent border radius
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                    : null,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
+    return GestureDetector(
+      onTap: () => _showFullscreenImage(imageUrl),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.all(8),
+        decoration: AppTheme.brutalistContainer(
+          backgroundColor: AppColors.backgroundSecondary,
+          addShadow: true,
+        ),
+        child: Stack(
+          children: [
+            ClipRRect(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                          : null,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryAccent,
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return _buildPlaceholderImage();
+                },
               ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return _buildPlaceholderImage();
-          },
+            ),
+            // Fullscreen icon in the corner
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: AppTheme.brutalistButton(
+                  backgroundColor: AppColors.brutalistYellow,
+                  addShadow: false,
+                ),
+                child: const Icon(
+                  Icons.fullscreen,
+                  color: AppColors.textPrimary,
+                  size: 24,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFullscreenImage(String imageUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(0),
+        child: Stack(
+          children: [
+            // Full screen image
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return _buildPlaceholderImage();
+                  },
+                ),
+              ),
+            ),
+            // Close button
+            Positioned(
+              top: 40,
+              right: 20,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: AppTheme.brutalistButton(
+                    backgroundColor: AppColors.brutalistRed,
+                    addShadow: true,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: AppColors.backgroundTertiary,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -501,11 +572,7 @@ class _GameScreenState extends State<GameScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.location_on,
-              color: AppColors.primaryAccent,
-              size: 48,
-            ),
+            Icon(Icons.location_on, color: AppColors.primaryAccent, size: 48),
             SizedBox(height: 8),
             Text(
               'Campus Location',
@@ -530,46 +597,28 @@ class _GameScreenState extends State<GameScreen>
           child: Container(
             width: double.infinity, // Full width button for better mobile UX
             height: 48, // Fixed height to prevent overflow
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: gameProvider.hasGuess && !gameProvider.isLoading
-                  ? const LinearGradient(
-                      colors: [
-                        AppColors.primaryGradientStart,
-                        AppColors.primaryGradientEnd,
-                      ],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    )
-                  : null,
-              color: !gameProvider.hasGuess || gameProvider.isLoading
-                  ? AppColors.backgroundElevated
-                  : null,
-              boxShadow: gameProvider.hasGuess && !gameProvider.isLoading
-                  ? [
-                      BoxShadow(
-                        color: AppColors.primaryAccent.withValues(alpha: 0.4),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-            ),
+            decoration: gameProvider.hasGuess && !gameProvider.isLoading
+                ? AppTheme.brutalistButton(
+                    backgroundColor: AppColors.brutalistGreen,
+                  )
+                : BoxDecoration(
+                    color: AppColors.backgroundSecondary,
+                    border: Border.all(
+                      color: AppColors.brutalistBorder,
+                      width: AppColors.brutalistBorderWidth,
+                    ),
+                  ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(20),
                 onTap: gameProvider.hasGuess && !gameProvider.isLoading
                     ? () => _submitGuess(gameProvider)
                     : null,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -579,14 +628,16 @@ class _GameScreenState extends State<GameScreen>
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.textPrimary,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                       ] else if (gameProvider.hasGuess) ...[
                         const Icon(
                           Icons.send_rounded,
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -595,12 +646,13 @@ class _GameScreenState extends State<GameScreen>
                         gameProvider.isLoading
                             ? 'Submitting...'
                             : gameProvider.hasGuess
-                                ? 'SUBMIT GUESS'
-                                : 'TAP ON MAP TO GUESS',
+                            ? 'SUBMIT GUESS'
+                            : 'TAP ON MAP TO GUESS',
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
-                          color: gameProvider.hasGuess && !gameProvider.isLoading
+                          color:
+                              gameProvider.hasGuess && !gameProvider.isLoading
                               ? Colors.white
                               : AppColors.textTertiary,
                         ),
@@ -617,7 +669,8 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _submitGuess(RealtimeGameProvider gameProvider) async {
-    if (!mounted || _hasSubmitted) return; // Added mounted check and submission check
+    if (!mounted || _hasSubmitted)
+      return; // Added mounted check and submission check
 
     _hasSubmitted = true;
     _timerService.stopTimer(); // Stop the timer when guess is submitted
@@ -637,7 +690,7 @@ class _GameScreenState extends State<GameScreen>
 
   void _showExitDialog() {
     if (!mounted) return; // Added mounted check
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -670,17 +723,19 @@ class _GameScreenState extends State<GameScreen>
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w500,
                   fontSize: 14,
-                ),//rkg
+                ), //rkg
               ),
             ),
             ElevatedButton(
               onPressed: () {
-                final gameProvider = Provider.of<RealtimeGameProvider>(context, listen: false);
-                gameProvider.resetGame();
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/',
-                  (route) => false,
+                final gameProvider = Provider.of<RealtimeGameProvider>(
+                  context,
+                  listen: false,
                 );
+                gameProvider.resetGame();
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/', (route) => false);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.errorRed,

@@ -7,7 +7,7 @@ import '../services/timer_service.dart';
 class RealtimeGameProvider extends ChangeNotifier {
   final RealtimeGameService _gameService = RealtimeGameService();
   final TimerService _timerService = TimerService();
-  
+
   GameRoom? _currentRoom;
   Player? _currentPlayer;
   List<Player> _players = [];
@@ -17,7 +17,6 @@ class RealtimeGameProvider extends ChangeNotifier {
   int _timeLeft = 30;
   RoundResult? _lastRoundResult;
 
-  // Getters
   GameRoom? get currentRoom => _currentRoom;
   Player? get currentPlayer => _currentPlayer;
   List<Player> get players => _players;
@@ -29,7 +28,6 @@ class RealtimeGameProvider extends ChangeNotifier {
   RoundResult? get lastRoundResult => _lastRoundResult;
   List<Map<String, dynamic>>? get finalScores => _gameService.finalScores;
 
-  // Stream getters for real-time updates
   Stream<GameRoom?> get roomStream => _gameService.roomStream;
   Stream<Player?> get playerStream => _gameService.playerStream;
   Stream<List<Player>> get playersStream => _gameService.playersStream;
@@ -38,8 +36,8 @@ class RealtimeGameProvider extends ChangeNotifier {
   Stream<String> get errorStream => _gameService.errorStream;
   Stream<bool> get loadingStream => _gameService.loadingStream;
 
-  // Additional streams for lobby functionality
-  Stream<Map<String, dynamic>> get gameStartingStream => _gameService.gameStartingStream;
+  Stream<Map<String, dynamic>> get gameStartingStream =>
+      _gameService.gameStartingStream;
 
   RealtimeGameProvider() {
     _setupListeners();
@@ -51,50 +49,42 @@ class RealtimeGameProvider extends ChangeNotifier {
   }
 
   void _setupListeners() {
-    // Listen to room changes
     _gameService.roomStream.listen((room) {
       _currentRoom = room;
       notifyListeners();
     });
 
-    // Listen to player changes
     _gameService.playerStream.listen((player) {
       _currentPlayer = player;
       notifyListeners();
     });
 
-    // Listen to players list changes
     _gameService.playersStream.listen((players) {
       _players = players;
       notifyListeners();
     });
 
-    // Listen to round timer
     _gameService.roundTimerStream.listen((timeLeft) {
       _timeLeft = timeLeft;
       notifyListeners();
     });
 
-    // Listen to round results
     _gameService.roundResultStream.listen((result) {
       _lastRoundResult = result;
       notifyListeners();
     });
 
-    // Listen to errors
     _gameService.errorStream.listen((error) {
       _error = error;
       notifyListeners();
     });
 
-    // Listen to loading state
     _gameService.loadingStream.listen((loading) {
       _isLoading = loading;
       notifyListeners();
     });
   }
 
-  // Create a new room
   Future<void> createRoom(String playerName) async {
     _setLoading(true);
     _clearError();
@@ -107,7 +97,6 @@ class RealtimeGameProvider extends ChangeNotifier {
     }
   }
 
-  // Join an existing room
   Future<void> joinRoom(String roomId, String playerName) async {
     _setLoading(true);
     _clearError();
@@ -241,7 +230,8 @@ class RealtimeGameProvider extends ChangeNotifier {
   int get currentPlayerRank {
     if (_currentPlayer == null) return 0;
     final leaderboard = this.leaderboard;
-    return leaderboard.indexWhere((player) => player.id == _currentPlayer!.id) + 1;
+    return leaderboard.indexWhere((player) => player.id == _currentPlayer!.id) +
+        1;
   }
 
   @override

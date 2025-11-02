@@ -70,76 +70,94 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundSecondary,
-        elevation: 0,
-        title: Text(
-          'Room: ${widget.roomId}',
-          style: GoogleFonts.poppins(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
+    return WillPopScope(
+      onWillPop: () async {
+        // Clean up when leaving lobby
+        final provider = Provider.of<RealtimeGameProvider>(
+          context,
+          listen: false,
+        );
+        provider.resetGame();
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        appBar: AppBar(
+          backgroundColor: AppColors.backgroundSecondary,
+          elevation: 0,
+          title: Text(
+            'Room: ${widget.roomId}',
+            style: GoogleFonts.poppins(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            onPressed: () {
+              final provider = Provider.of<RealtimeGameProvider>(
+                context,
+                listen: false,
+              );
+              provider.resetGame();
+              Navigator.of(context).pop();
+            },
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Consumer<RealtimeGameProvider>(
-        builder: (context, provider, child) {
-          final room = provider.currentRoom;
-          // Get all players from the room
-          final players = room?.players ?? [];
-          final isLoading = provider.isLoading;
+        body: Consumer<RealtimeGameProvider>(
+          builder: (context, provider, child) {
+            final room = provider.currentRoom;
+            // Get all players from the room
+            final players = room?.players ?? [];
+            final isLoading = provider.isLoading;
 
-          print('🎮 Lobby: Showing ${players.length} players');
-          for (var player in players) {
-            print('  - ${player.name} (Ready: ${player.isReady})');
-          }
+            print('🎮 Lobby: Showing ${players.length} players');
+            for (var player in players) {
+              print('  - ${player.name} (Ready: ${player.isReady})');
+            }
 
-          if (isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.primaryAccent,
+            if (isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryAccent,
+                  ),
                 ),
+              );
+            }
+
+            return Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Room info card
+                  _buildRoomInfoCard(room),
+                  const SizedBox(height: 20),
+
+                  // Countdown display
+                  if (_countdown != null && _countdown! > 0)
+                    _buildCountdownCard(),
+
+                  // Players list
+                  Expanded(child: _buildPlayersList(players)),
+
+                  const SizedBox(height: 20),
+
+                  // Ready button
+                  _buildReadyButton(provider),
+
+                  const SizedBox(height: 10),
+
+                  // Start game button (for room creator)
+                  if (players.isNotEmpty &&
+                      players.first.name == widget.playerName)
+                    _buildStartGameButton(provider, players),
+                ],
               ),
             );
-          }
-
-          return Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Room info card
-                _buildRoomInfoCard(room),
-                const SizedBox(height: 20),
-
-                // Countdown display
-                if (_countdown != null && _countdown! > 0)
-                  _buildCountdownCard(),
-
-                // Players list
-                Expanded(child: _buildPlayersList(players)),
-
-                const SizedBox(height: 20),
-
-                // Ready button
-                _buildReadyButton(provider),
-
-                const SizedBox(height: 10),
-
-                // Start game button (for room creator)
-                if (players.isNotEmpty &&
-                    players.first.name == widget.playerName)
-                  _buildStartGameButton(provider, players),
-              ],
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }

@@ -64,38 +64,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
-        title: ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [AppColors.primaryAccent, AppColors.successGreen],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ).createShader(bounds),
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.backgroundPrimary,
+            border: Border.all(color: AppColors.brutalistBorder, width: 3),
+          ),
           child: Text(
             'SOMAIYA GUESSR',
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.spaceGrotesk(
               fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: 1,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: 2,
             ),
           ),
         ),
-        backgroundColor: AppColors.backgroundSecondary,
-        elevation: 8,
-        shadowColor: Colors.black.withOpacity(0.3),
+        backgroundColor: AppColors.brutalistCyan,
+        elevation: 0,
         centerTitle: true,
+        // Add hard shadow below app bar
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4),
+          child: Container(color: AppColors.brutalistBorder, height: 4),
+        ),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundPrimary,
-              AppColors.backgroundSecondary,
-            ],
-          ),
-        ),
+        color: AppColors.backgroundPrimary,
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnimation,
@@ -134,27 +129,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.primaryAccent.withOpacity(0.1),
-                AppColors.successGreen.withOpacity(0.1),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.primaryAccent.withOpacity(0.3),
-              width: 1,
-            ),
+          decoration: AppTheme.brutalistContainer(
+            backgroundColor: AppColors.brutalistPink,
+            addShadow: true,
           ),
           child: Text(
-            'Guess the campus locations and compete with friends!',
-            style: GoogleFonts.poppins(
-              fontSize: isSmallScreen ? 14 : 16,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+            'GUESS THE CAMPUS LOCATIONS!',
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: isSmallScreen ? 16 : 18,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
             ),
             textAlign: TextAlign.center,
           ),
@@ -169,71 +154,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (context, child) {
         return Transform.scale(
           scale: _pulseAnimation.value,
-          child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primaryAccent, AppColors.successGreen],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          child: GestureDetector(
+            onTap: _playAsGuest,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(32.0),
+              decoration: AppTheme.brutalistButton(
+                backgroundColor: AppColors.brutalistYellow,
+                addShadow: true,
               ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryAccent.withOpacity(0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: AppColors.successGreen.withOpacity(0.2),
-                  blurRadius: 30,
-                  offset: const Offset(0, 16),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: _playAsGuest,
-                child: Container(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        child: const Icon(
-                          Icons.play_circle_filled,
-                          color: Colors.white,
-                          size: 48,
-                        ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.textPrimary,
+                      border: Border.all(
+                        color: AppColors.brutalistBorder,
+                        width: 3,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'QUICK PLAY',
-                        style: GoogleFonts.poppins(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Start playing instantly as a guest',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
+                    ),
+                    child: const Icon(
+                      Icons.play_circle_filled,
+                      color: AppColors.brutalistYellow,
+                      size: 48,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'QUICK PLAY',
+                    style: GoogleFonts.spaceGrotesk(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'START INSTANTLY!',
+                    style: GoogleFonts.spaceGrotesk(
+                      fontSize: 16,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -244,27 +210,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildCreateRoomSection(bool isSmallScreen) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.backgroundCard,
-            AppColors.backgroundCard.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primaryAccent.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+      decoration: AppTheme.brutalistContainer(
+        backgroundColor: AppColors.backgroundTertiary,
+        addShadow: true,
       ),
       child: Padding(
         padding: EdgeInsets.all(isSmallScreen ? 20.0 : 28.0),
@@ -276,25 +224,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primaryAccent, AppColors.accentPurple],
+                    color: AppColors.brutalistPurple,
+                    border: Border.all(
+                      color: AppColors.brutalistBorder,
+                      width: 3,
                     ),
-                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.add_circle,
-                    color: Colors.white,
+                    color: AppColors.backgroundTertiary,
                     size: 24,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   'CREATE ROOM',
-                  style: GoogleFonts.poppins(
-                    fontSize: isSmallScreen ? 18 : 20,
-                    fontWeight: FontWeight.w700,
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: isSmallScreen ? 20 : 24,
+                    fontWeight: FontWeight.w900,
                     color: AppColors.textPrimary,
-                    letterSpacing: 0.5,
+                    letterSpacing: 1,
                   ),
                 ),
               ],
@@ -303,98 +252,77 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             TextField(
               controller: _roomNameController,
               decoration: InputDecoration(
-                labelText: 'Room Name',
+                labelText: 'ROOM NAME',
                 hintText: 'Enter room name',
+                labelStyle: GoogleFonts.spaceGrotesk(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
                 prefixIcon: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryAccent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.brutalistYellow,
+                    border: Border.all(
+                      color: AppColors.brutalistBorder,
+                      width: 2,
+                    ),
                   ),
                   child: const Icon(
                     Icons.meeting_room,
-                    color: AppColors.primaryAccent,
-                  ),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.borderMedium),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryAccent,
-                    width: 2,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
-              style: GoogleFonts.poppins(color: AppColors.textPrimary),
+              style: GoogleFonts.spaceGrotesk(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             SizedBox(height: isSmallScreen ? 16 : 20),
             TextField(
               controller: _playerNameController,
               decoration: InputDecoration(
-                labelText: 'Your Name',
+                labelText: 'YOUR NAME',
                 hintText: 'Enter your name',
+                labelStyle: GoogleFonts.spaceGrotesk(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
                 prefixIcon: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryAccent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.brutalistYellow,
+                    border: Border.all(
+                      color: AppColors.brutalistBorder,
+                      width: 2,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    color: AppColors.primaryAccent,
-                  ),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.borderMedium),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryAccent,
-                    width: 2,
-                  ),
+                  child: const Icon(Icons.person, color: AppColors.textPrimary),
                 ),
               ),
-              style: GoogleFonts.poppins(color: AppColors.textPrimary),
+              style: GoogleFonts.spaceGrotesk(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             SizedBox(height: isSmallScreen ? 20 : 28),
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primaryAccent, AppColors.accentPurple],
+            GestureDetector(
+              onTap: _createRoom,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  vertical: isSmallScreen ? 18 : 22,
                 ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryAccent.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: _createRoom,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isSmallScreen ? 16 : 20,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'CREATE ROOM',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 16 : 18,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                decoration: AppTheme.brutalistButton(
+                  backgroundColor: AppColors.brutalistPurple,
+                ),
+                child: Center(
+                  child: Text(
+                    'CREATE ROOM',
+                    style: GoogleFonts.spaceGrotesk(
+                      fontWeight: FontWeight.w900,
+                      fontSize: isSmallScreen ? 16 : 18,
+                      color: AppColors.backgroundTertiary,
+                      letterSpacing: 1,
                     ),
                   ),
                 ),
@@ -408,27 +336,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildJoinRoomSection(bool isSmallScreen) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.backgroundCard,
-            AppColors.backgroundCard.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.successGreen.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+      decoration: AppTheme.brutalistContainer(
+        backgroundColor: AppColors.backgroundTertiary,
+        addShadow: true,
       ),
       child: Padding(
         padding: EdgeInsets.all(isSmallScreen ? 20.0 : 28.0),
@@ -440,21 +350,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.successGreen, AppColors.accentGreen],
+                    color: AppColors.brutalistGreen,
+                    border: Border.all(
+                      color: AppColors.brutalistBorder,
+                      width: 3,
                     ),
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.login, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.login,
+                    color: AppColors.backgroundTertiary,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   'JOIN ROOM',
-                  style: GoogleFonts.poppins(
-                    fontSize: isSmallScreen ? 18 : 20,
-                    fontWeight: FontWeight.w700,
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: isSmallScreen ? 20 : 24,
+                    fontWeight: FontWeight.w900,
                     color: AppColors.textPrimary,
-                    letterSpacing: 0.5,
+                    letterSpacing: 1,
                   ),
                 ),
               ],
@@ -463,98 +378,77 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             TextField(
               controller: _joinRoomController,
               decoration: InputDecoration(
-                labelText: 'Room ID',
+                labelText: 'ROOM ID',
                 hintText: 'Enter room ID',
+                labelStyle: GoogleFonts.spaceGrotesk(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
                 prefixIcon: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.successGreen.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.brutalistCyan,
+                    border: Border.all(
+                      color: AppColors.brutalistBorder,
+                      width: 2,
+                    ),
                   ),
                   child: const Icon(
                     Icons.vpn_key,
-                    color: AppColors.successGreen,
-                  ),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.borderMedium),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppColors.successGreen,
-                    width: 2,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
-              style: GoogleFonts.poppins(color: AppColors.textPrimary),
+              style: GoogleFonts.spaceGrotesk(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             SizedBox(height: isSmallScreen ? 16 : 20),
             TextField(
               controller: _playerNameController,
               decoration: InputDecoration(
-                labelText: 'Your Name',
+                labelText: 'YOUR NAME',
                 hintText: 'Enter your name',
+                labelStyle: GoogleFonts.spaceGrotesk(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
                 prefixIcon: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.successGreen.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.brutalistCyan,
+                    border: Border.all(
+                      color: AppColors.brutalistBorder,
+                      width: 2,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    color: AppColors.successGreen,
-                  ),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.borderMedium),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppColors.successGreen,
-                    width: 2,
-                  ),
+                  child: const Icon(Icons.person, color: AppColors.textPrimary),
                 ),
               ),
-              style: GoogleFonts.poppins(color: AppColors.textPrimary),
+              style: GoogleFonts.spaceGrotesk(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             SizedBox(height: isSmallScreen ? 20 : 28),
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.successGreen, AppColors.accentGreen],
+            GestureDetector(
+              onTap: _joinRoom,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  vertical: isSmallScreen ? 18 : 22,
                 ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.successGreen.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: _joinRoom,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isSmallScreen ? 16 : 20,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'JOIN ROOM',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 16 : 18,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                decoration: AppTheme.brutalistButton(
+                  backgroundColor: AppColors.brutalistGreen,
+                ),
+                child: Center(
+                  child: Text(
+                    'JOIN ROOM',
+                    style: GoogleFonts.spaceGrotesk(
+                      fontWeight: FontWeight.w900,
+                      fontSize: isSmallScreen ? 16 : 18,
+                      color: AppColors.backgroundTertiary,
+                      letterSpacing: 1,
                     ),
                   ),
                 ),
@@ -614,19 +508,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       listen: false,
     );
 
-    // For realtime provider, create a room and join as guest
+    // For single-player mode, create a room and auto-start the game
     await gameProvider.createRoom('Guest Player');
 
     if (gameProvider.currentRoom != null && mounted) {
-      // Navigate to lobby first, then to game when ready
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => LobbyScreen(
-            roomId: gameProvider.currentRoom!.id,
-            playerName: 'Guest Player',
-          ),
-        ),
-      );
+      // Auto-ready and start the game for single player
+      gameProvider.setPlayerReady(true);
+
+      // Small delay to ensure ready state is processed
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Auto-start the game immediately for single player
+      gameProvider.startGame();
+
+      // Navigate directly to game screen, skipping lobby
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const GameScreen()));
     }
   }
 

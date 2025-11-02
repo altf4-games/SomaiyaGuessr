@@ -60,6 +60,7 @@ class _GameOverScreenState extends State<GameOverScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -68,7 +69,6 @@ class _GameOverScreenState extends State<GameOverScreen>
             child: Consumer<GameProvider>(
               builder: (context, gameProvider, child) {
                 final player = gameProvider.currentPlayer;
-                final room = gameProvider.currentRoom;
 
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -95,36 +95,43 @@ class _GameOverScreenState extends State<GameOverScreen>
       children: [
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.primaryAccent.withOpacity(0.2.clamp(0.0, 1.0)),
-            border: Border.all(color: AppColors.primaryAccent, width: 3),
+          decoration: AppTheme.brutalistContainer(
+            backgroundColor: AppColors.brutalistYellow,
+            addShadow: true,
           ),
           child: const Icon(
             Icons.emoji_events,
             size: 60,
-            color: AppColors.primaryAccent,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 24),
         Text(
           'GAME OVER!',
-          style: GoogleFonts.poppins(
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 40,
+            fontWeight: FontWeight.w900,
             color: AppColors.textPrimary,
-            letterSpacing: 2,
+            letterSpacing: 3,
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          'Great job exploring Somaiya Campus!',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w400,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: AppTheme.brutalistContainer(
+            backgroundColor: AppColors.brutalistPink,
+            addShadow: false,
           ),
-          textAlign: TextAlign.center,
+          child: Text(
+            'GREAT JOB!',
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 18,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ),
       ],
     );
@@ -134,46 +141,56 @@ class _GameOverScreenState extends State<GameOverScreen>
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primaryAccent.withOpacity(0.3.clamp(0.0, 1.0)),
-          width: 2,
-        ),
+      decoration: AppTheme.brutalistContainer(
+        backgroundColor: AppColors.backgroundTertiary,
+        addShadow: true,
       ),
       child: Column(
         children: [
           Text(
             'FINAL SCORE',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-              letterSpacing: 1,
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: 2,
             ),
           ),
           const SizedBox(height: 16),
           AnimatedBuilder(
             animation: _scoreAnimation,
             builder: (context, child) {
-              return Text(
-                '${_scoreAnimation.value}',
-                style: GoogleFonts.poppins(
-                  fontSize: 64,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryAccent,
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.brutalistCyan,
+                  border: Border.all(
+                    color: AppColors.brutalistBorder,
+                    width: 4,
+                  ),
+                ),
+                child: Text(
+                  '${_scoreAnimation.value}',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 64,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               );
             },
           ),
+          const SizedBox(height: 16),
           Text(
             'POINTS',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-              letterSpacing: 1,
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: 2,
             ),
           ),
         ],
@@ -235,30 +252,49 @@ class _GameOverScreenState extends State<GameOverScreen>
   Widget _buildActionButtons(GameProvider gameProvider) {
     return Column(
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => _playAgain(gameProvider),
-            child: Text(
-              'PLAY AGAIN',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
+        GestureDetector(
+          onTap: () => _playAgain(gameProvider),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            decoration: AppTheme.brutalistButton(
+              backgroundColor: AppColors.brutalistGreen,
+            ),
+            child: Center(
+              child: Text(
+                'PLAY AGAIN',
+                style: GoogleFonts.spaceGrotesk(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  color: AppColors.textPrimary,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: TextButton(
-            onPressed: () => _backToHome(gameProvider),
-            child: Text(
-              'BACK TO HOME',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-                fontSize: 16,
-                color: AppColors.textSecondary,
+        GestureDetector(
+          onTap: () => _backToHome(gameProvider),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundTertiary,
+              border: Border.all(
+                color: AppColors.brutalistBorder,
+                width: AppColors.brutalistBorderWidth,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                'BACK TO HOME',
+                style: GoogleFonts.spaceGrotesk(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  color: AppColors.textPrimary,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ),

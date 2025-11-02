@@ -1,7 +1,6 @@
 const Photo = require("../models/Photo");
 const cloudinary = require("../config/cloudinary");
 
-// Upload new photo
 exports.uploadPhoto = async (req, res) => {
   try {
     if (!req.file) {
@@ -16,7 +15,6 @@ exports.uploadPhoto = async (req, res) => {
         .json({ error: "Coordinates (coordX, coordY) are required" });
     }
 
-    // Upload to Cloudinary
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -35,7 +33,6 @@ exports.uploadPhoto = async (req, res) => {
         .end(req.file.buffer);
     });
 
-    // Save to database
     const photo = new Photo({
       imageUrl: result.secure_url,
       cloudinaryId: result.public_id,
@@ -65,7 +62,6 @@ exports.uploadPhoto = async (req, res) => {
   }
 };
 
-// Get all photos (admin)
 exports.getAllPhotos = async (req, res) => {
   try {
     const photos = await Photo.find().sort({ createdAt: -1 });
@@ -75,7 +71,6 @@ exports.getAllPhotos = async (req, res) => {
   }
 };
 
-// Delete photo
 exports.deletePhoto = async (req, res) => {
   try {
     const { id } = req.params;
@@ -85,10 +80,8 @@ exports.deletePhoto = async (req, res) => {
       return res.status(404).json({ error: "Photo not found" });
     }
 
-    // Delete from Cloudinary
     await cloudinary.uploader.destroy(photo.cloudinaryId);
 
-    // Delete from database
     await Photo.findByIdAndDelete(id);
 
     res.json({ message: "Photo deleted successfully" });
