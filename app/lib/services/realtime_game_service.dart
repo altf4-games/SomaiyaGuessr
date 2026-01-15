@@ -15,6 +15,12 @@ class RealtimeGameService {
   String? _currentPlayerName;
   List<Map<String, dynamic>>? _finalScores;
   
+  // Local timer management
+  Timer? _roundTimer;
+  int _currentTimeLeft = 0;
+  int _roundDuration = 30; // Default 30 seconds
+  bool _hasSubmittedCurrentRound = false;
+  
   // Stream controllers for game state changes
   final StreamController<GameRoom?> _roomController = StreamController.broadcast();
   final StreamController<Player?> _playerController = StreamController.broadcast();
@@ -99,14 +105,14 @@ class RealtimeGameService {
     _pusherService.gameStarted.listen((data) {
       _updateRoomFromData(data);
       _updatePlayersFromData(data);
+      _hasSubmittedCurrentRound = false;
+      _startLocalTimer(data);
     });
 
-    // Round timer
+    // Round timer - ignore server timer events (using local timer)
     _pusherService.roundTimer.listen((data) {
-      final timeLeft = data['timeLeft'] as int?;
-      if (timeLeft != null) {
-        _roundTimerController.add(timeLeft);
-      }
+      // Server timer events are ignored - we use local timer
+      // This is kept for backwards compatibility
     });
 
     // Player guessed
@@ -116,6 +122,7 @@ class RealtimeGameService {
 
     // Round ended
     _pusherService.roundEnded.listen((data) {
+      _stopLocalTimer(); // Stop timer when round ends
       if (_currentRoom != null) {
         _currentRoom = GameRoom(
           id: _currentRoom!.id,
@@ -133,10 +140,13 @@ class RealtimeGameService {
     // New round
     _pusherService.newRound.listen((data) {
       _updateRoomFromNewRound(data);
+      _hasSubmittedCurrentRound = false;
+      _startLocalTimer(data);
     });
 
     // Game finished
     _pusherService.gameFinished.listen((data) {
+      _stopLocalTimer(); // Stop timer when game ends
       if (_currentRoom != null) {
         // Store final scores
         _finalScores = (data['finalScores'] as List<dynamic>?)
@@ -212,11 +222,13 @@ class RealtimeGameService {
 
   Future<void> leaveRoom() async {
     if (_currentRoom != null && _currentPlayerName != null) {
+      _stopLocalTimer();
       await _apiService.leaveRoom(_currentRoom!.id, _currentPlayerName!);
       await _pusherService.unsubscribeFromRoom();
       _currentRoom = null;
       _currentPlayer = null;
       _currentPlayerName = null;
+      _hasSubmittedCurrentRound = false;
       _roomController.add(null);
     }
   }
@@ -248,6 +260,8 @@ class RealtimeGameService {
   Future<void> submitGuess(LatLng? guessLocation) async {
     if (_currentRoom != null && _currentPlayerName != null) {
       try {
+        _hasSubmittedCurrentRound = true; // Mark as submitted before API call
+        
         final result = await _apiService.submitGuess(
           roomId: _currentRoom!.id,
           playerName: _currentPlayerName!,
@@ -426,6 +440,68 @@ class RealtimeGameService {
     _loadingController.add(loading);
   }
 
+  // Start local timer based on server's roundStartTime and roundDuration
+  void _startLocalTimer(Map<String, dynamic> data) {
+    _stopLocalTimer();
+    
+    // Get round duration from server (in milliseconds, convert to seconds)
+    final durationMs = data['roundDuration'] as int? ?? 30000;
+    _roundDuration = durationMs ~/ 1000;
+    
+    // Get round start time from server
+    final roundStartTimeStr = data['roundStartTime'] as String?;
+    DateTime roundStartTime;
+    if (roundStartTimeStr != null) {
+      roundStartTime = DateTime.parse(roundStartTimeStr);
+    } else {
+      roundStartTime = DateTime.now();
+    }
+    
+    // Calculate initial time left based on server time
+    final now = DateTime.now();
+    final elapsed = now.difference(roundStartTime).inSeconds;
+    _currentTimeLeft = (_roundDuration - elapsed).clamp(0, _roundDuration);
+    
+    if (kDebugMode) {
+      print('⏱️ Starting local timer: $_currentTimeLeft seconds remaining');
+      print('   Round start: $roundStartTime, Duration: $_roundDuration s');
+    }
+    
+    // Emit initial time
+    _roundTimerController.add(_currentTimeLeft);
+    
+    // Start the timer
+    _roundTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _currentTimeLeft--;
+      _roundTimerController.add(_currentTimeLeft);
+      
+      if (_currentTimeLeft <= 0) {
+        timer.cancel();
+        _onTimerExpired();
+      }
+    });
+  }
+  
+  void _stopLocalTimer() {
+    _roundTimer?.cancel();
+    _roundTimer = null;
+  }
+  
+  // Called when local timer expires
+  void _onTimerExpired() {
+    if (kDebugMode) {
+      print('⏱️ Local timer expired');
+    }
+    
+    // If player hasn't submitted yet, notify the server
+    if (!_hasSubmittedCurrentRound && _currentRoom != null && _currentPlayerName != null) {
+      if (kDebugMode) {
+        print('⏱️ Auto-submitting due to time expiry');
+      }
+      _apiService.timeExpired(_currentRoom!.id, _currentPlayerName!);
+    }
+  }
+
   // Helper method to create Location from backend photo data
   Location? _createLocationFromPhotoData(Map<String, dynamic> photoData, int round) {
     try {
@@ -479,6 +555,7 @@ class RealtimeGameService {
   }
 
   void dispose() {
+    _stopLocalTimer();
     _pusherService.dispose();
     _roomController.close();
     _playerController.close();

@@ -12,6 +12,7 @@ router.get("/room/:roomId", gameController.getRoomState);
 router.post("/player-ready", gameController.setPlayerReady);
 router.post("/start-game", gameController.startGame);
 router.post("/submit-guess", gameController.submitGuess);
+router.post("/time-expired", gameController.timeExpired);
 router.post("/next-round", gameController.nextRound);
 
 // Utility routes

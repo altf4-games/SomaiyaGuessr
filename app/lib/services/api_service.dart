@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  // static const String _baseUrl = 'https://somaiyaguessr.skillversus.xyz/api';
-  static const String _baseUrl = 'http://localhost:3000/api';
+  static const String _baseUrl = 'https://somaiya-guessr.vercel.app/api';
+  // static const String _baseUrl = 'http://localhost:3000/api';
 
   // Singleton pattern
   static final ApiService _instance = ApiService._internal();
@@ -207,6 +207,32 @@ class ApiService {
         print('❌ Error moving to next round: $e');
       }
       throw Exception('Failed to move to next round: $e');
+    }
+  }
+
+  // Notify server that time has expired for this player
+  Future<void> timeExpired(String roomId, String playerName) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/game/time-expired'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'roomId': roomId,
+          'playerName': playerName,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final errorBody = json.decode(response.body);
+        if (kDebugMode) {
+          print('⚠️ Time expired call failed: ${errorBody['error']}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Error notifying time expired: $e');
+      }
+      // Don't throw - time expiry should fail silently
     }
   }
 
