@@ -68,7 +68,9 @@ exports.joinRoom = async (req, res) => {
       minPlayers: room.minPlayers,
       maxPlayers: room.maxPlayers,
       roundDuration: room.roundDuration,
-      roundStartTime: room.roundStartTime ? room.roundStartTime.toISOString() : null,
+      roundStartTime: room.roundStartTime
+        ? room.roundStartTime.toISOString()
+        : null,
       photo:
         room.currentPhoto && room.gameState === "playing"
           ? {
@@ -99,12 +101,14 @@ exports.leaveRoom = async (req, res) => {
 
     const updatedRoom = RoomManager.getRoom(roomId);
     if (updatedRoom) {
-      const playersArray = Array.from(updatedRoom.players.values()).map((p) => ({
-        name: p.name,
-        score: p.score,
-        isReady: p.isReady,
-        hasSubmittedGuess: p.hasSubmittedGuess,
-      }));
+      const playersArray = Array.from(updatedRoom.players.values()).map(
+        (p) => ({
+          name: p.name,
+          score: p.score,
+          isReady: p.isReady,
+          hasSubmittedGuess: p.hasSubmittedGuess,
+        })
+      );
 
       await pusher.trigger(`room-${roomId}`, "player-left", {
         playerName,
@@ -217,8 +221,8 @@ exports.startGame = async (req, res) => {
         : null,
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Game started",
       roundStartTime: startedRoom.roundStartTime.toISOString(),
       roundDuration: startedRoom.roundDuration,
@@ -272,7 +276,11 @@ exports.submitGuess = async (req, res) => {
 
     console.log(`Guess submission: Player ${playerName}`);
     console.log(`   Time expired: ${timeExpired}`);
-    console.log(`   Distance: ${distance === Infinity ? 'N/A' : distance.toFixed(2) + 'm'}`);
+    console.log(
+      `   Distance: ${
+        distance === Infinity ? "N/A" : distance.toFixed(2) + "m"
+      }`
+    );
     console.log(`   Points awarded: ${points}`);
 
     const updatedPlayer = RoomManager.updatePlayerScore(roomId, playerName, {
@@ -302,8 +310,10 @@ exports.submitGuess = async (req, res) => {
     });
 
     // Check if all players have submitted
-    const allSubmitted = Array.from(room.players.values()).every(p => p.hasSubmittedGuess);
-    
+    const allSubmitted = Array.from(room.players.values()).every(
+      (p) => p.hasSubmittedGuess
+    );
+
     if (allSubmitted) {
       // End the round
       await pusher.trigger(`room-${roomId}`, "round-ended", {
@@ -375,8 +385,10 @@ exports.timeExpired = async (req, res) => {
       });
 
       // Check if all players have now submitted
-      const allSubmitted = Array.from(room.players.values()).every(p => p.hasSubmittedGuess);
-      
+      const allSubmitted = Array.from(room.players.values()).every(
+        (p) => p.hasSubmittedGuess
+      );
+
       if (allSubmitted) {
         const photo = room.currentPhoto;
         await pusher.trigger(`room-${roomId}`, "round-ended", {
@@ -522,7 +534,9 @@ exports.getRoomState = async (req, res) => {
       minPlayers: room.minPlayers,
       maxPlayers: room.maxPlayers,
       roundDuration: room.roundDuration,
-      roundStartTime: room.roundStartTime ? room.roundStartTime.toISOString() : null,
+      roundStartTime: room.roundStartTime
+        ? room.roundStartTime.toISOString()
+        : null,
       photo:
         room.currentPhoto && room.gameState === "playing"
           ? {

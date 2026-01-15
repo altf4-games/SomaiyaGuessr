@@ -216,10 +216,7 @@ class ApiService {
       final response = await http.post(
         Uri.parse('$_baseUrl/game/time-expired'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'roomId': roomId,
-          'playerName': playerName,
-        }),
+        body: json.encode({'roomId': roomId, 'playerName': playerName}),
       );
 
       if (response.statusCode != 200) {

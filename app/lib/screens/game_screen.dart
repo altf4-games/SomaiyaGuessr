@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import '../providers/realtime_game_provider.dart';
 import '../models/game_models.dart';
-import '../services/timer_service.dart';
 import '../utils/theme.dart';
 import '../widgets/campus_map.dart';
 import 'game_end_screen.dart';
@@ -20,7 +19,6 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   late AnimationController _buttonAnimationController;
   late Animation<double> _buttonScaleAnimation;
-  final TimerService _timerService = TimerService();
   int _timeLeft = 30;
   bool _hasSubmitted = false;
 
@@ -100,7 +98,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _buttonAnimationController.dispose();
-    _timerService.stopTimer();
     super.dispose();
   }
 
@@ -673,7 +670,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       return; // Added mounted check and submission check
 
     _hasSubmitted = true;
-    _timerService.stopTimer(); // Stop the timer when guess is submitted
+    // Timer is now managed by RealtimeGameService - no need to stop it here
+    // Timer will stop when round-ended event is received from server
 
     _buttonAnimationController.forward().then((_) {
       if (mounted) _buttonAnimationController.reverse();

@@ -8,27 +8,34 @@ import 'api_service.dart';
 class RealtimeGameService {
   final PusherService _pusherService = PusherService();
   final ApiService _apiService = ApiService();
-  
+
   // Current game state
   GameRoom? _currentRoom;
   Player? _currentPlayer;
   String? _currentPlayerName;
   List<Map<String, dynamic>>? _finalScores;
-  
+
   // Local timer management
   Timer? _roundTimer;
   int _currentTimeLeft = 0;
   int _roundDuration = 30; // Default 30 seconds
   bool _hasSubmittedCurrentRound = false;
-  
+
   // Stream controllers for game state changes
-  final StreamController<GameRoom?> _roomController = StreamController.broadcast();
-  final StreamController<Player?> _playerController = StreamController.broadcast();
-  final StreamController<List<Player>> _playersController = StreamController.broadcast();
-  final StreamController<int> _roundTimerController = StreamController.broadcast();
-  final StreamController<RoundResult?> _roundResultController = StreamController.broadcast();
-  final StreamController<String> _errorController = StreamController.broadcast();
-  final StreamController<bool> _loadingController = StreamController.broadcast();
+  final StreamController<GameRoom?> _roomController =
+      StreamController.broadcast();
+  final StreamController<Player?> _playerController =
+      StreamController.broadcast();
+  final StreamController<List<Player>> _playersController =
+      StreamController.broadcast();
+  final StreamController<int> _roundTimerController =
+      StreamController.broadcast();
+  final StreamController<RoundResult?> _roundResultController =
+      StreamController.broadcast();
+  final StreamController<String> _errorController =
+      StreamController.broadcast();
+  final StreamController<bool> _loadingController =
+      StreamController.broadcast();
 
   // Getters for streams
   Stream<GameRoom?> get roomStream => _roomController.stream;
@@ -40,10 +47,14 @@ class RealtimeGameService {
   Stream<bool> get loadingStream => _loadingController.stream;
 
   // Additional streams for lobby functionality
-  Stream<Map<String, dynamic>> get gameStartingStream => _pusherService.gameStarting;
-  Stream<Map<String, dynamic>> get playerJoinedStream => _pusherService.playerJoined;
-  Stream<Map<String, dynamic>> get playerLeftStream => _pusherService.playerLeft;
-  Stream<Map<String, dynamic>> get playerReadyStream => _pusherService.playerReady;
+  Stream<Map<String, dynamic>> get gameStartingStream =>
+      _pusherService.gameStarting;
+  Stream<Map<String, dynamic>> get playerJoinedStream =>
+      _pusherService.playerJoined;
+  Stream<Map<String, dynamic>> get playerLeftStream =>
+      _pusherService.playerLeft;
+  Stream<Map<String, dynamic>> get playerReadyStream =>
+      _pusherService.playerReady;
 
   // Getters for current state
   GameRoom? get currentRoom => _currentRoom;
@@ -186,11 +197,11 @@ class RealtimeGameService {
 
       // Join the room via REST API
       final joinData = await _apiService.joinRoom(roomId, playerName);
-      
+
       // Update room state from response
       _updateRoomFromData(joinData);
       _updatePlayersFromData(joinData);
-      
+
       _setLoading(false);
     } catch (e) {
       _setLoading(false);
@@ -208,11 +219,11 @@ class RealtimeGameService {
 
       // Join room via REST API
       final joinData = await _apiService.joinRoom(roomId, playerName);
-      
+
       // Update room state from response
       _updateRoomFromData(joinData);
       _updatePlayersFromData(joinData);
-      
+
       _setLoading(false);
     } catch (e) {
       _setLoading(false);
@@ -261,7 +272,7 @@ class RealtimeGameService {
     if (_currentRoom != null && _currentPlayerName != null) {
       try {
         _hasSubmittedCurrentRound = true; // Mark as submitted before API call
-        
+
         final result = await _apiService.submitGuess(
           roomId: _currentRoom!.id,
           playerName: _currentPlayerName!,
@@ -272,8 +283,9 @@ class RealtimeGameService {
         // Process guess result
         final distance = (result['distance'] as num?)?.toDouble() ?? 0.0;
         final points = (result['points'] as num?)?.toInt() ?? 0;
-        final actualLocation = result['actualLocation'] as Map<String, dynamic>?;
-        
+        final actualLocation =
+            result['actualLocation'] as Map<String, dynamic>?;
+
         if (actualLocation != null && _currentPlayer != null) {
           final roundResult = RoundResult(
             round: _currentRoom?.currentRound ?? 1,
@@ -286,12 +298,14 @@ class RealtimeGameService {
             score: points,
             timestamp: DateTime.now(),
           );
-          
+
           _roundResultController.add(roundResult);
-          
+
           // Update player score
           if (_currentPlayer != null) {
-            _currentPlayer!.totalScore = (result['totalScore'] as num?)?.toInt() ?? _currentPlayer!.totalScore;
+            _currentPlayer!.totalScore =
+                (result['totalScore'] as num?)?.toInt() ??
+                _currentPlayer!.totalScore;
             _playerController.add(_currentPlayer);
           }
         }
@@ -383,7 +397,7 @@ class RealtimeGameService {
 
   void _updatePlayersFromData(Map<String, dynamic> data) {
     final playersData = data['players'] as List<dynamic>?;
-    
+
     if (playersData != null) {
       final players = playersData.map((playerData) {
         final playerMap = playerData as Map<String, dynamic>;
@@ -394,16 +408,16 @@ class RealtimeGameService {
           isReady: playerMap['isReady'] ?? false,
           hasSubmittedGuess: playerMap['hasSubmittedGuess'] ?? false,
         );
-        
+
         // Update current player if this is them
         if (player.name == _currentPlayerName) {
           _currentPlayer = player;
           _playerController.add(_currentPlayer);
         }
-        
+
         return player;
       }).toList();
-      
+
       if (_currentRoom != null) {
         _currentRoom = GameRoom(
           id: _currentRoom!.id,
@@ -416,7 +430,7 @@ class RealtimeGameService {
         );
         _roomController.add(_currentRoom);
       }
-      
+
       _playersController.add(players);
     }
   }
@@ -443,11 +457,11 @@ class RealtimeGameService {
   // Start local timer based on server's roundStartTime and roundDuration
   void _startLocalTimer(Map<String, dynamic> data) {
     _stopLocalTimer();
-    
+
     // Get round duration from server (in milliseconds, convert to seconds)
     final durationMs = data['roundDuration'] as int? ?? 30000;
     _roundDuration = durationMs ~/ 1000;
-    
+
     // Get round start time from server
     final roundStartTimeStr = data['roundStartTime'] as String?;
     DateTime roundStartTime;
@@ -456,45 +470,47 @@ class RealtimeGameService {
     } else {
       roundStartTime = DateTime.now();
     }
-    
+
     // Calculate initial time left based on server time
     final now = DateTime.now();
     final elapsed = now.difference(roundStartTime).inSeconds;
     _currentTimeLeft = (_roundDuration - elapsed).clamp(0, _roundDuration);
-    
+
     if (kDebugMode) {
       print('⏱️ Starting local timer: $_currentTimeLeft seconds remaining');
       print('   Round start: $roundStartTime, Duration: $_roundDuration s');
     }
-    
+
     // Emit initial time
     _roundTimerController.add(_currentTimeLeft);
-    
+
     // Start the timer
     _roundTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _currentTimeLeft--;
       _roundTimerController.add(_currentTimeLeft);
-      
+
       if (_currentTimeLeft <= 0) {
         timer.cancel();
         _onTimerExpired();
       }
     });
   }
-  
+
   void _stopLocalTimer() {
     _roundTimer?.cancel();
     _roundTimer = null;
   }
-  
+
   // Called when local timer expires
   void _onTimerExpired() {
     if (kDebugMode) {
       print('⏱️ Local timer expired');
     }
-    
+
     // If player hasn't submitted yet, notify the server
-    if (!_hasSubmittedCurrentRound && _currentRoom != null && _currentPlayerName != null) {
+    if (!_hasSubmittedCurrentRound &&
+        _currentRoom != null &&
+        _currentPlayerName != null) {
       if (kDebugMode) {
         print('⏱️ Auto-submitting due to time expiry');
       }
@@ -503,7 +519,10 @@ class RealtimeGameService {
   }
 
   // Helper method to create Location from backend photo data
-  Location? _createLocationFromPhotoData(Map<String, dynamic> photoData, int round) {
+  Location? _createLocationFromPhotoData(
+    Map<String, dynamic> photoData,
+    int round,
+  ) {
     try {
       final imageUrl = photoData['imageUrl'] as String?;
       final locationName = photoData['location'] as String?;
@@ -522,7 +541,9 @@ class RealtimeGameService {
       final lng = coordY?.toDouble() ?? (72.8777 + (round * 0.001));
 
       if (kDebugMode) {
-        print('📍 Creating location: $locationName at ($lat, $lng) with image: $imageUrl');
+        print(
+          '📍 Creating location: $locationName at ($lat, $lng) with image: $imageUrl',
+        );
       }
 
       return Location(
