@@ -1,5 +1,6 @@
 const RoomManager = require("../utils/roomManager");
 const Photo = require("../models/Photo");
+const pusher = require("../config/pusher");
 
 function generateRoomCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -33,7 +34,7 @@ exports.createRoom = async (req, res) => {
 
 exports.joinRoom = async (req, res) => {
   try {
-    const { roomId } = req.body;
+    const { roomId, playerName } = req.body;
 
     const room = RoomManager.getRoom(roomId);
 
@@ -41,23 +42,43 @@ exports.joinRoom = async (req, res) => {
       return res.status(404).json({ error: "Room not found" });
     }
 
+    // Add player to room
+    const player = RoomManager.addPlayerToRoom(roomId, null, playerName);
+    if (!player) {
+      return res.status(400).json({ error: "Failed to join room" });
+    }
+
     const playersArray = Array.from(room.players.values()).map((p) => ({
       name: p.name,
       score: p.score,
+      isReady: p.isReady,
+      hasSubmittedGuess: p.hasSubmittedGuess,
     }));
+
+    // Notify other players via Pusher
+    await pusher.trigger(`room-${roomId}`, "player-joined", {
+      playerName,
+      totalPlayers: room.players.size,
+      players: playersArray,
+    });
 
     res.json({
       roomId: room.roomId,
       currentRound: room.currentRound,
       totalRounds: room.totalRounds,
       gameState: room.gameState,
-      photo: room.currentPhoto
-        ? {
-            imageUrl: room.currentPhoto.imageUrl,
-            location: room.currentPhoto.location,
-            difficulty: room.currentPhoto.difficulty,
-          }
-        : null,
+      minPlayers: room.minPlayers,
+      maxPlayers: room.maxPlayers,
+      photo:
+        room.currentPhoto && room.gameState === "playing"
+          ? {
+              imageUrl: room.currentPhoto.imageUrl,
+              location: room.currentPhoto.location,
+              difficulty: room.currentPhoto.difficulty,
+              coordX: room.currentPhoto.coordX,
+              coordY: room.currentPhoto.coordY,
+            }
+          : null,
       players: playersArray,
     });
   } catch (error) {
@@ -65,23 +86,154 @@ exports.joinRoom = async (req, res) => {
   }
 };
 
-exports.getRandomPhoto = async (req, res) => {
+exports.leaveRoom = async (req, res) => {
   try {
-    const photos = await Photo.find();
+    const { roomId, playerName } = req.body;
 
-    if (photos.length === 0) {
-      return res.status(404).json({ error: "No photos available" });
+    const room = RoomManager.getRoom(roomId);
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
     }
 
-    const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
+    RoomManager.removePlayerFromRoom(roomId, playerName);
+
+    const updatedRoom = RoomManager.getRoom(roomId);
+    if (updatedRoom) {
+      const playersArray = Array.from(updatedRoom.players.values()).map((p) => ({
+        name: p.name,
+        score: p.score,
+        isReady: p.isReady,
+        hasSubmittedGuess: p.hasSubmittedGuess,
+      }));
+
+      await pusher.trigger(`room-${roomId}`, "player-left", {
+        playerName,
+        totalPlayers: updatedRoom.players.size,
+        players: playersArray,
+      });
+    }
+
+    res.json({ success: true, message: "Left room successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.setPlayerReady = async (req, res) => {
+  try {
+    const { roomId, playerName, isReady } = req.body;
+
+    const room = RoomManager.getRoom(roomId);
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    if (room.gameState !== "lobby") {
+      return res.status(400).json({ error: "Game is not in lobby state" });
+    }
+
+    const player = RoomManager.setPlayerReady(roomId, playerName, isReady);
+    if (!player) {
+      return res.status(404).json({ error: "Player not found in room" });
+    }
+
+    const playersArray = Array.from(room.players.values()).map((p) => ({
+      name: p.name,
+      score: p.score,
+      isReady: p.isReady,
+      hasSubmittedGuess: p.hasSubmittedGuess,
+    }));
+
+    await pusher.trigger(`room-${roomId}`, "player-ready-changed", {
+      playerName,
+      isReady,
+      players: playersArray,
+    });
+
+    // Check if all players are ready
+    const allReady = Array.from(room.players.values()).every((p) => p.isReady);
+    const canStart = allReady && room.players.size >= room.minPlayers;
 
     res.json({
-      photo: {
-        imageUrl: randomPhoto.imageUrl,
-        location: randomPhoto.location,
-        difficulty: randomPhoto.difficulty,
-      },
+      success: true,
+      playerName,
+      isReady,
+      players: playersArray,
+      canStart,
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.startGame = async (req, res) => {
+  try {
+    const { roomId } = req.body;
+
+    const room = RoomManager.getRoom(roomId);
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    if (room.gameState !== "lobby") {
+      return res.status(400).json({ error: "Game is not in lobby state" });
+    }
+
+    if (room.players.size < room.minPlayers) {
+      return res.status(400).json({
+        error: `Need at least ${room.minPlayers} players to start`,
+      });
+    }
+
+    // Start countdown
+    room.gameState = "starting";
+    
+    // Send countdown events
+    await pusher.trigger(`room-${roomId}`, "game-starting", { countdown: 3 });
+    
+    // Schedule game start
+    setTimeout(async () => {
+      await pusher.trigger(`room-${roomId}`, "game-starting", { countdown: 2 });
+    }, 1000);
+    
+    setTimeout(async () => {
+      await pusher.trigger(`room-${roomId}`, "game-starting", { countdown: 1 });
+    }, 2000);
+
+    setTimeout(async () => {
+      // Actually start the game
+      const startedRoom = await RoomManager.startGameForPusher(roomId);
+      if (startedRoom) {
+        const playersArray = Array.from(startedRoom.players.values()).map((p) => ({
+          name: p.name,
+          score: p.score,
+          isReady: p.isReady,
+          hasSubmittedGuess: p.hasSubmittedGuess,
+        }));
+
+        await pusher.trigger(`room-${roomId}`, "game-started", {
+          roomId: startedRoom.roomId,
+          currentRound: startedRoom.currentRound,
+          totalRounds: startedRoom.totalRounds,
+          gameState: startedRoom.gameState,
+          players: playersArray,
+          photo: startedRoom.currentPhoto
+            ? {
+                imageUrl: startedRoom.currentPhoto.imageUrl,
+                location: startedRoom.currentPhoto.location,
+                difficulty: startedRoom.currentPhoto.difficulty,
+                coordX: startedRoom.currentPhoto.coordX,
+                coordY: startedRoom.currentPhoto.coordY,
+              }
+            : null,
+        });
+
+        // Start the round timer
+        RoomManager.startRoundTimerWithPusher(roomId, pusher);
+      }
+    }, 3000);
+
+    res.json({ success: true, message: "Game starting countdown initiated" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -96,6 +248,21 @@ exports.submitGuess = async (req, res) => {
       return res.status(404).json({ error: "Room not found" });
     }
 
+    if (room.gameState !== "playing") {
+      return res.status(400).json({ error: "Game is not in playing state" });
+    }
+
+    const player = RoomManager.getPlayer(roomId, playerName);
+    if (!player) {
+      return res.status(404).json({ error: "Player not found in room" });
+    }
+
+    if (player.hasSubmittedGuess) {
+      return res.status(400).json({
+        error: "You have already submitted a guess for this round",
+      });
+    }
+
     const photo = room.currentPhoto;
     const distance = calculateDistance(
       guessX,
@@ -105,13 +272,40 @@ exports.submitGuess = async (req, res) => {
     );
     const points = calculatePoints(distance);
 
-    RoomManager.addPlayerToRoom(roomId, null, playerName);
+    console.log(`Guess submission: Player ${playerName}`);
+    console.log(`   Guess coordinates: (${guessX}, ${guessY})`);
+    console.log(`   Photo coordinates: (${photo.coordX}, ${photo.coordY})`);
+    console.log(`   Distance: ${distance.toFixed(2)}m`);
+    console.log(`   Points awarded: ${points}`);
+
     const updatedPlayer = RoomManager.updatePlayerScore(roomId, playerName, {
       guessX,
       guessY,
       distance,
       points,
     });
+
+    if (!updatedPlayer) {
+      return res.status(500).json({ error: "Failed to update player score" });
+    }
+
+    const playersArray = Array.from(room.players.values()).map((p) => ({
+      name: p.name,
+      score: p.score,
+      isReady: p.isReady,
+      hasSubmittedGuess: p.hasSubmittedGuess,
+    }));
+
+    // Notify all players about the guess
+    await pusher.trigger(`room-${roomId}`, "player-guessed", {
+      playerName,
+      score: updatedPlayer.score,
+      guessCount: updatedPlayer.guesses.length,
+      players: playersArray,
+    });
+
+    // Check if round is complete
+    RoomManager.checkRoundCompletionWithPusher(roomId, pusher);
 
     res.json({
       distance: Math.round(distance),
@@ -137,8 +331,26 @@ exports.nextRound = async (req, res) => {
     }
 
     if (result.gameFinished) {
+      await pusher.trigger(`room-${roomId}`, "game-finished", {
+        finalScores: result.finalScores,
+      });
       return res.json(result);
     }
+
+    // Start round timer for new round
+    RoomManager.startRoundTimerWithPusher(roomId, pusher);
+
+    await pusher.trigger(`room-${roomId}`, "new-round", {
+      currentRound: result.currentRound,
+      totalRounds: result.totalRounds,
+      photo: {
+        imageUrl: result.currentPhoto.imageUrl,
+        location: result.currentPhoto.location,
+        difficulty: result.currentPhoto.difficulty,
+        coordX: result.currentPhoto.coordX,
+        coordY: result.currentPhoto.coordY,
+      },
+    });
 
     res.json({
       currentRound: result.currentRound,
@@ -147,6 +359,28 @@ exports.nextRound = async (req, res) => {
         imageUrl: result.currentPhoto.imageUrl,
         location: result.currentPhoto.location,
         difficulty: result.currentPhoto.difficulty,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getRandomPhoto = async (req, res) => {
+  try {
+    const photos = await Photo.find();
+
+    if (photos.length === 0) {
+      return res.status(404).json({ error: "No photos available" });
+    }
+
+    const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
+
+    res.json({
+      photo: {
+        imageUrl: randomPhoto.imageUrl,
+        location: randomPhoto.location,
+        difficulty: randomPhoto.difficulty,
       },
     });
   } catch (error) {
@@ -182,6 +416,47 @@ exports.cleanupRooms = async (req, res) => {
     res.json({
       message: `Cleaned up ${cleanedCount} inactive rooms`,
       cleanedCount,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get room state (for polling fallback)
+exports.getRoomState = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    const room = RoomManager.getRoom(roomId);
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    const playersArray = Array.from(room.players.values()).map((p) => ({
+      name: p.name,
+      score: p.score,
+      isReady: p.isReady,
+      hasSubmittedGuess: p.hasSubmittedGuess,
+    }));
+
+    res.json({
+      roomId: room.roomId,
+      currentRound: room.currentRound,
+      totalRounds: room.totalRounds,
+      gameState: room.gameState,
+      minPlayers: room.minPlayers,
+      maxPlayers: room.maxPlayers,
+      photo:
+        room.currentPhoto && room.gameState === "playing"
+          ? {
+              imageUrl: room.currentPhoto.imageUrl,
+              location: room.currentPhoto.location,
+              difficulty: room.currentPhoto.difficulty,
+              coordX: room.currentPhoto.coordX,
+              coordY: room.currentPhoto.coordY,
+            }
+          : null,
+      players: playersArray,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

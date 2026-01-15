@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/game_models.dart';
-import 'socket_service.dart';
+import 'pusher_service.dart';
 import 'api_service.dart';
 
 class RealtimeGameService {
-  final SocketService _socketService = SocketService();
+  final PusherService _pusherService = PusherService();
   final ApiService _apiService = ApiService();
   
   // Current game state
@@ -34,10 +34,10 @@ class RealtimeGameService {
   Stream<bool> get loadingStream => _loadingController.stream;
 
   // Additional streams for lobby functionality
-  Stream<Map<String, dynamic>> get gameStartingStream => _socketService.gameStarting;
-  Stream<Map<String, dynamic>> get playerJoinedStream => _socketService.playerJoined;
-  Stream<Map<String, dynamic>> get playerLeftStream => _socketService.playerLeft;
-  Stream<Map<String, dynamic>> get playerReadyStream => _socketService.playerReady;
+  Stream<Map<String, dynamic>> get gameStartingStream => _pusherService.gameStarting;
+  Stream<Map<String, dynamic>> get playerJoinedStream => _pusherService.playerJoined;
+  Stream<Map<String, dynamic>> get playerLeftStream => _pusherService.playerLeft;
+  Stream<Map<String, dynamic>> get playerReadyStream => _pusherService.playerReady;
 
   // Getters for current state
   GameRoom? get currentRoom => _currentRoom;
@@ -49,13 +49,13 @@ class RealtimeGameService {
   static final RealtimeGameService _instance = RealtimeGameService._internal();
   factory RealtimeGameService() => _instance;
   RealtimeGameService._internal() {
-    _setupSocketListeners();
+    _setupPusherListeners();
   }
 
   Future<void> initialize() async {
     _setLoading(true);
     try {
-      await _socketService.connect();
+      await _pusherService.connect();
       _setLoading(false);
     } catch (e) {
       _setLoading(false);
@@ -63,29 +63,23 @@ class RealtimeGameService {
     }
   }
 
-  void _setupSocketListeners() {
-    // Room joined
-    _socketService.roomJoined.listen((data) {
-      _updateRoomFromData(data);
-      _updatePlayersFromData(data);
-    });
-
+  void _setupPusherListeners() {
     // Player joined/left
-    _socketService.playerJoined.listen((data) {
+    _pusherService.playerJoined.listen((data) {
       _updatePlayersFromData(data);
     });
 
-    _socketService.playerLeft.listen((data) {
+    _pusherService.playerLeft.listen((data) {
       _updatePlayersFromData(data);
     });
 
     // Player ready status changed
-    _socketService.playerReady.listen((data) {
+    _pusherService.playerReady.listen((data) {
       _updatePlayersFromData(data);
     });
 
     // Game starting countdown
-    _socketService.gameStarting.listen((data) {
+    _pusherService.gameStarting.listen((data) {
       final countdown = data['countdown'] as int?;
       if (countdown != null && _currentRoom != null) {
         _currentRoom = GameRoom(
@@ -101,8 +95,14 @@ class RealtimeGameService {
       }
     });
 
+    // Game started
+    _pusherService.gameStarted.listen((data) {
+      _updateRoomFromData(data);
+      _updatePlayersFromData(data);
+    });
+
     // Round timer
-    _socketService.roundTimer.listen((data) {
+    _pusherService.roundTimer.listen((data) {
       final timeLeft = data['timeLeft'] as int?;
       if (timeLeft != null) {
         _roundTimerController.add(timeLeft);
@@ -110,12 +110,12 @@ class RealtimeGameService {
     });
 
     // Player guessed
-    _socketService.playerGuessed.listen((data) {
+    _pusherService.playerGuessed.listen((data) {
       _updatePlayersFromData(data);
     });
 
     // Round ended
-    _socketService.roundEnded.listen((data) {
+    _pusherService.roundEnded.listen((data) {
       if (_currentRoom != null) {
         _currentRoom = GameRoom(
           id: _currentRoom!.id,
@@ -127,19 +127,16 @@ class RealtimeGameService {
           locations: _currentRoom!.locations,
         );
         _roomController.add(_currentRoom);
-
-        // Note: Round advancement is now handled entirely by the backend
-        // The backend will automatically advance to the next round after a delay
       }
     });
 
     // New round
-    _socketService.newRound.listen((data) {
+    _pusherService.newRound.listen((data) {
       _updateRoomFromNewRound(data);
     });
 
     // Game finished
-    _socketService.gameFinished.listen((data) {
+    _pusherService.gameFinished.listen((data) {
       if (_currentRoom != null) {
         // Store final scores
         _finalScores = (data['finalScores'] as List<dynamic>?)
@@ -159,37 +156,8 @@ class RealtimeGameService {
       }
     });
 
-    // Guess result
-    _socketService.guessResult.listen((data) {
-      final distance = (data['distance'] as num?)?.toDouble() ?? 0.0;
-      final points = (data['points'] as num?)?.toInt() ?? 0;
-      final actualLocation = data['actualLocation'] as Map<String, dynamic>?;
-      
-      if (actualLocation != null && _currentPlayer != null) {
-        final result = RoundResult(
-          round: _currentRoom?.currentRound ?? 1,
-          guessLocation: null, // Will be set from the guess
-          actualLocation: LatLng(
-            (actualLocation['y'] as num).toDouble(),
-            (actualLocation['x'] as num).toDouble(),
-          ),
-          distance: distance,
-          score: points,
-          timestamp: DateTime.now(),
-        );
-        
-        _roundResultController.add(result);
-        
-        // Update player score
-        if (_currentPlayer != null) {
-          _currentPlayer!.totalScore = (data['totalScore'] as num?)?.toInt() ?? _currentPlayer!.totalScore;
-          _playerController.add(_currentPlayer);
-        }
-      }
-    });
-
     // Errors
-    _socketService.error.listen((error) {
+    _pusherService.error.listen((error) {
       _errorController.add(error);
     });
   }
@@ -203,12 +171,17 @@ class RealtimeGameService {
       final roomData = await _apiService.createRoom();
       final roomId = roomData['roomId'] as String;
 
-      // Join the room via Socket.IO and wait for the room-joined event
-      _socketService.joinRoom(roomId, playerName);
+      // Subscribe to Pusher channel
+      await _pusherService.subscribeToRoom(roomId);
 
-      // Wait for the room to be set (with timeout)
-      await _waitForRoom(timeout: const Duration(seconds: 5));
-
+      // Join the room via REST API
+      final joinData = await _apiService.joinRoom(roomId, playerName);
+      
+      // Update room state from response
+      _updateRoomFromData(joinData);
+      _updatePlayersFromData(joinData);
+      
+      _setLoading(false);
     } catch (e) {
       _setLoading(false);
       _errorController.add('Failed to create room: $e');
@@ -220,43 +193,99 @@ class RealtimeGameService {
     try {
       _currentPlayerName = playerName;
 
-      // Join room via Socket.IO
-      _socketService.joinRoom(roomId, playerName);
+      // Subscribe to Pusher channel first
+      await _pusherService.subscribeToRoom(roomId);
 
-      // Wait for the room to be set (with timeout)
-      await _waitForRoom(timeout: const Duration(seconds: 5));
-
+      // Join room via REST API
+      final joinData = await _apiService.joinRoom(roomId, playerName);
+      
+      // Update room state from response
+      _updateRoomFromData(joinData);
+      _updatePlayersFromData(joinData);
+      
+      _setLoading(false);
     } catch (e) {
       _setLoading(false);
       _errorController.add('Failed to join room: $e');
     }
   }
 
-  void setPlayerReady(bool isReady) {
+  Future<void> leaveRoom() async {
     if (_currentRoom != null && _currentPlayerName != null) {
-      _socketService.setPlayerReady(_currentRoom!.id, _currentPlayerName!, isReady);
+      await _apiService.leaveRoom(_currentRoom!.id, _currentPlayerName!);
+      await _pusherService.unsubscribeFromRoom();
+      _currentRoom = null;
+      _currentPlayer = null;
+      _currentPlayerName = null;
+      _roomController.add(null);
     }
   }
 
-  void startGame() {
+  Future<void> setPlayerReady(bool isReady) async {
+    if (_currentRoom != null && _currentPlayerName != null) {
+      try {
+        await _apiService.setPlayerReady(
+          _currentRoom!.id,
+          _currentPlayerName!,
+          isReady,
+        );
+      } catch (e) {
+        _errorController.add('Failed to set ready status: $e');
+      }
+    }
+  }
+
+  Future<void> startGame() async {
     if (_currentRoom != null) {
-      _socketService.startGame(_currentRoom!.id);
+      try {
+        await _apiService.startGame(_currentRoom!.id);
+      } catch (e) {
+        _errorController.add('Failed to start game: $e');
+      }
     }
   }
 
-  void submitGuess(LatLng? guessLocation) {
+  Future<void> submitGuess(LatLng? guessLocation) async {
     if (_currentRoom != null && _currentPlayerName != null) {
-      _socketService.submitGuess(
-        _currentRoom!.id,
-        _currentPlayerName!,
-        guessLocation?.longitude,
-        guessLocation?.latitude,
-      );
+      try {
+        final result = await _apiService.submitGuess(
+          roomId: _currentRoom!.id,
+          playerName: _currentPlayerName!,
+          guessX: guessLocation?.longitude,
+          guessY: guessLocation?.latitude,
+        );
+
+        // Process guess result
+        final distance = (result['distance'] as num?)?.toDouble() ?? 0.0;
+        final points = (result['points'] as num?)?.toInt() ?? 0;
+        final actualLocation = result['actualLocation'] as Map<String, dynamic>?;
+        
+        if (actualLocation != null && _currentPlayer != null) {
+          final roundResult = RoundResult(
+            round: _currentRoom?.currentRound ?? 1,
+            guessLocation: guessLocation,
+            actualLocation: LatLng(
+              (actualLocation['y'] as num).toDouble(),
+              (actualLocation['x'] as num).toDouble(),
+            ),
+            distance: distance,
+            score: points,
+            timestamp: DateTime.now(),
+          );
+          
+          _roundResultController.add(roundResult);
+          
+          // Update player score
+          if (_currentPlayer != null) {
+            _currentPlayer!.totalScore = (result['totalScore'] as num?)?.toInt() ?? _currentPlayer!.totalScore;
+            _playerController.add(_currentPlayer);
+          }
+        }
+      } catch (e) {
+        _errorController.add('Failed to submit guess: $e');
+      }
     }
   }
-
-  // Note: Round advancement is now handled automatically by the backend
-  // No manual nextRound() method needed
 
   void _updateRoomFromData(Map<String, dynamic> data) {
     final roomId = data['roomId'] as String?;
@@ -288,7 +317,7 @@ class RealtimeGameService {
 
       _currentRoom = GameRoom(
         id: roomId,
-        name: roomId, // Use roomId as name for now
+        name: roomId,
         players: _currentRoom?.players ?? [],
         state: state,
         currentRound: currentRound,
@@ -297,7 +326,6 @@ class RealtimeGameService {
       );
 
       _roomController.add(_currentRoom);
-      _setLoading(false);
     }
   }
 
@@ -346,7 +374,7 @@ class RealtimeGameService {
       final players = playersData.map((playerData) {
         final playerMap = playerData as Map<String, dynamic>;
         final player = Player(
-          id: playerMap['name'], // Use name as ID for now
+          id: playerMap['name'],
           name: playerMap['name'],
           totalScore: playerMap['score'] ?? 0,
           isReady: playerMap['isReady'] ?? false,
@@ -384,7 +412,7 @@ class RealtimeGameService {
       case 'lobby':
         return GameState.waiting;
       case 'starting':
-        return GameState.waiting;
+        return GameState.starting;
       case 'playing':
         return GameState.playing;
       case 'finished':
@@ -398,57 +426,28 @@ class RealtimeGameService {
     _loadingController.add(loading);
   }
 
-  // Helper method to wait for room to be set with timeout
-  Future<void> _waitForRoom({Duration timeout = const Duration(seconds: 5)}) async {
-    final completer = Completer<void>();
-    Timer? timeoutTimer;
-    StreamSubscription? roomSubscription;
-
-    // Set up timeout
-    timeoutTimer = Timer(timeout, () {
-      if (!completer.isCompleted) {
-        completer.completeError('Timeout waiting for room');
-      }
-    });
-
-    // Listen for room updates
-    roomSubscription = _roomController.stream.listen((room) {
-      if (room != null && !completer.isCompleted) {
-        timeoutTimer?.cancel();
-        roomSubscription?.cancel();
-        _setLoading(false);
-        completer.complete();
-      }
-    });
-
-    try {
-      await completer.future;
-    } finally {
-      timeoutTimer?.cancel();
-      roomSubscription?.cancel();
-    }
-  }
-
   // Helper method to create Location from backend photo data
   Location? _createLocationFromPhotoData(Map<String, dynamic> photoData, int round) {
     try {
       final imageUrl = photoData['imageUrl'] as String?;
       final locationName = photoData['location'] as String?;
-      final difficulty = photoData['difficulty'] as String?;
       final coordX = photoData['coordX'] as num?;
       final coordY = photoData['coordY'] as num?;
 
       if (imageUrl == null) {
-        print('❌ No imageUrl in photo data: $photoData');
+        if (kDebugMode) {
+          print('❌ No imageUrl in photo data: $photoData');
+        }
         return null;
       }
 
-      // Backend stores: coordX=latitude, coordY=longitude (swapped!)
-      // We need: lat=latitude, lng=longitude
-      final lat = coordX?.toDouble() ?? (19.0760 + (round * 0.001));  // coordX is latitude
-      final lng = coordY?.toDouble() ?? (72.8777 + (round * 0.001));  // coordY is longitude
+      // Backend stores: coordX=latitude, coordY=longitude
+      final lat = coordX?.toDouble() ?? (19.0760 + (round * 0.001));
+      final lng = coordY?.toDouble() ?? (72.8777 + (round * 0.001));
 
-      print('📍 Creating location: $locationName at ($lat, $lng) with image: $imageUrl');
+      if (kDebugMode) {
+        print('📍 Creating location: $locationName at ($lat, $lng) with image: $imageUrl');
+      }
 
       return Location(
         id: 'round_$round',
@@ -458,7 +457,9 @@ class RealtimeGameService {
         description: locationName ?? 'Campus location for round $round',
       );
     } catch (e) {
-      print('❌ Error creating location from photo data: $e');
+      if (kDebugMode) {
+        print('❌ Error creating location from photo data: $e');
+      }
       return null;
     }
   }
@@ -478,7 +479,7 @@ class RealtimeGameService {
   }
 
   void dispose() {
-    _socketService.dispose();
+    _pusherService.dispose();
     _roomController.close();
     _playerController.close();
     _playersController.close();

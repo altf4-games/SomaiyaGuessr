@@ -29,6 +29,7 @@ class RoomManager {
       roundTimer: null,
       minPlayers: 1,
       maxPlayers: 8,
+      timeLeft: 30,
     };
 
     rooms.set(roomId, room);
@@ -82,7 +83,6 @@ class RoomManager {
     if (room.players.size === 0) {
       room.gameState = "empty";
       this.clearRoomTimer(roomId);
-    } else if (room.gameState === "lobby") {
     }
 
     return removed;
@@ -116,6 +116,172 @@ class RoomManager {
     room.lastActivity = new Date();
 
     return player;
+  }
+
+  // Pusher-compatible methods
+  static async startGameForPusher(roomId) {
+    const room = rooms.get(roomId);
+    if (!room) return null;
+
+    room.gameState = "playing";
+    room.gameStartTime = new Date();
+    room.currentRound = 1;
+    room.timeLeft = room.roundDuration / 1000;
+
+    for (const player of room.players.values()) {
+      player.isReady = false;
+      player.hasSubmittedGuess = false;
+    }
+
+    return room;
+  }
+
+  static startRoundTimerWithPusher(roomId, pusher) {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    console.log(
+      `Starting round timer for room ${roomId} (${room.roundDuration / 1000} seconds)`
+    );
+
+    room.roundStartTime = new Date();
+    room.timeLeft = room.roundDuration / 1000;
+
+    this.clearRoomTimer(roomId, "round");
+
+    const roundInterval = setInterval(async () => {
+      room.timeLeft--;
+
+      try {
+        await pusher.trigger(`room-${roomId}`, "round-timer", {
+          timeLeft: room.timeLeft,
+        });
+      } catch (error) {
+        console.error(`Error sending timer update: ${error.message}`);
+      }
+
+      if (room.timeLeft % 10 === 0 || room.timeLeft <= 5) {
+        const submittedCount = Array.from(room.players.values()).filter(
+          (p) => p.hasSubmittedGuess
+        ).length;
+        console.log(
+          `Room ${roomId} timer: ${room.timeLeft}s left, ${submittedCount}/${room.players.size} players submitted`
+        );
+      }
+
+      if (room.timeLeft <= 0) {
+        console.log(`Timer expired for room ${roomId}, auto-submitting`);
+        clearInterval(roundInterval);
+        await this.autoSubmitRoundWithPusher(roomId, pusher);
+      }
+    }, 1000);
+
+    if (!roomTimers.has(roomId)) {
+      roomTimers.set(roomId, {});
+    }
+    roomTimers.get(roomId).round = roundInterval;
+  }
+
+  static async autoSubmitRoundWithPusher(roomId, pusher) {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    console.log(`Timer expired for room ${roomId}, auto-submitting for remaining players`);
+
+    for (const [playerName, player] of room.players) {
+      if (!player.hasSubmittedGuess) {
+        console.log(`Auto-submitting for player ${playerName}`);
+        this.updatePlayerScore(roomId, playerName, {
+          guessX: null,
+          guessY: null,
+          distance: Infinity,
+          points: 0,
+        });
+        player.hasSubmittedGuess = true;
+      }
+    }
+
+    await this.checkRoundCompletionWithPusher(roomId, pusher, true);
+  }
+
+  static async checkRoundCompletionWithPusher(roomId, pusher, autoSubmitted = false) {
+    const room = rooms.get(roomId);
+    if (!room || room.gameState !== "playing") return false;
+
+    const playerCount = room.players.size;
+    const submittedCount = Array.from(room.players.values()).filter(
+      (player) => player.hasSubmittedGuess
+    ).length;
+    const allSubmitted = submittedCount === playerCount;
+
+    console.log(
+      `Round completion check for room ${roomId}: ${submittedCount}/${playerCount} players submitted`
+    );
+
+    if (allSubmitted && playerCount > 0) {
+      console.log(`All players submitted! Ending round for room ${roomId}`);
+
+      this.clearRoomTimer(roomId, "round");
+
+      try {
+        await pusher.trigger(`room-${roomId}`, "round-ended", {
+          autoSubmitted: autoSubmitted,
+          actualLocation: {
+            x: room.currentPhoto.coordX,
+            y: room.currentPhoto.coordY,
+          },
+        });
+
+        // Schedule next round advancement
+        setTimeout(async () => {
+          await this.advanceToNextRoundWithPusher(roomId, pusher);
+        }, 3000);
+      } catch (error) {
+        console.error(`Error in round completion: ${error.message}`);
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  static async advanceToNextRoundWithPusher(roomId, pusher) {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    if (room.gameState !== "playing") {
+      console.log(`Skipping round advancement for room ${roomId} - not in playing state`);
+      return;
+    }
+
+    console.log(`Auto-advancing to next round for room ${roomId}`);
+
+    try {
+      const result = await this.nextRound(roomId);
+
+      if (result && result.gameFinished) {
+        await pusher.trigger(`room-${roomId}`, "game-finished", {
+          finalScores: result.finalScores,
+        });
+      } else if (result) {
+        await pusher.trigger(`room-${roomId}`, "new-round", {
+          currentRound: result.currentRound,
+          totalRounds: result.totalRounds,
+          photo: {
+            imageUrl: result.currentPhoto.imageUrl,
+            location: result.currentPhoto.location,
+            difficulty: result.currentPhoto.difficulty,
+            coordX: result.currentPhoto.coordX,
+            coordY: result.currentPhoto.coordY,
+          },
+        });
+
+        this.startRoundTimerWithPusher(roomId, pusher);
+      }
+    } catch (error) {
+      console.error(`Error advancing round for room ${roomId}:`, error);
+    }
   }
 
   static checkRoundCompletion(roomId, io = null, autoSubmitted = false) {

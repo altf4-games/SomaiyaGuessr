@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://somaiyaguessr.skillversus.xyz/api';
+  // static const String _baseUrl = 'https://somaiyaguessr.skillversus.xyz/api';
+  static const String _baseUrl = 'http://localhost:3000/api';
 
   // Singleton pattern
   static final ApiService _instance = ApiService._internal();
@@ -32,12 +33,15 @@ class ApiService {
   }
 
   // Join an existing room
-  Future<Map<String, dynamic>> joinRoom(String roomId) async {
+  Future<Map<String, dynamic>> joinRoom(
+    String roomId,
+    String playerName,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/game/join-room'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'roomId': roomId}),
+        body: json.encode({'roomId': roomId, 'playerName': playerName}),
       );
 
       if (response.statusCode == 200) {
@@ -51,6 +55,81 @@ class ApiService {
         print('❌ Error joining room: $e');
       }
       throw Exception('Failed to join room: $e');
+    }
+  }
+
+  // Leave a room
+  Future<void> leaveRoom(String roomId, String playerName) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/game/leave-room'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'roomId': roomId, 'playerName': playerName}),
+      );
+
+      if (response.statusCode != 200) {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['error'] ?? 'Failed to leave room');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error leaving room: $e');
+      }
+      // Don't throw - leaving room should fail silently
+    }
+  }
+
+  // Set player ready status
+  Future<Map<String, dynamic>> setPlayerReady(
+    String roomId,
+    String playerName,
+    bool isReady,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/game/player-ready'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'roomId': roomId,
+          'playerName': playerName,
+          'isReady': isReady,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['error'] ?? 'Failed to set ready status');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error setting ready status: $e');
+      }
+      throw Exception('Failed to set ready status: $e');
+    }
+  }
+
+  // Start game
+  Future<Map<String, dynamic>> startGame(String roomId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/game/start-game'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'roomId': roomId}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['error'] ?? 'Failed to start game');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error starting game: $e');
+      }
+      throw Exception('Failed to start game: $e');
     }
   }
 
@@ -75,12 +154,12 @@ class ApiService {
     }
   }
 
-  // Submit a guess (REST fallback, prefer Socket.IO)
+  // Submit a guess
   Future<Map<String, dynamic>> submitGuess({
     required String roomId,
     required String playerName,
-    required double guessX,
-    required double guessY,
+    double? guessX,
+    double? guessY,
   }) async {
     try {
       final response = await http.post(
@@ -108,7 +187,7 @@ class ApiService {
     }
   }
 
-  // Move to next round (REST fallback, prefer Socket.IO)
+  // Move to next round
   Future<Map<String, dynamic>> nextRound(String roomId) async {
     try {
       final response = await http.post(
@@ -128,6 +207,28 @@ class ApiService {
         print('❌ Error moving to next round: $e');
       }
       throw Exception('Failed to move to next round: $e');
+    }
+  }
+
+  // Get room state (for polling/fallback)
+  Future<Map<String, dynamic>> getRoomState(String roomId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/game/room/$roomId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['error'] ?? 'Failed to get room state');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error getting room state: $e');
+      }
+      throw Exception('Failed to get room state: $e');
     }
   }
 

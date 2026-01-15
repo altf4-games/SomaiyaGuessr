@@ -110,13 +110,13 @@ class RealtimeGameProvider extends ChangeNotifier {
   }
 
   // Set player ready status
-  void setPlayerReady(bool isReady) {
-    _gameService.setPlayerReady(isReady);
+  Future<void> setPlayerReady(bool isReady) async {
+    await _gameService.setPlayerReady(isReady);
   }
 
   // Start the game (for room creator)
-  void startGame() {
-    _gameService.startGame();
+  Future<void> startGame() async {
+    await _gameService.startGame();
   }
 
   // Set player's guess
@@ -126,11 +126,11 @@ class RealtimeGameProvider extends ChangeNotifier {
   }
 
   // Submit guess for current round
-  void submitGuess() {
+  Future<void> submitGuess() async {
     if (_currentGuess != null) {
-      _gameService.submitGuess(_currentGuess);
+      await _gameService.submitGuess(_currentGuess);
     } else {
-      _gameService.submitGuess(null); // Submit null guess
+      await _gameService.submitGuess(null); // Submit null guess
     }
   }
 
