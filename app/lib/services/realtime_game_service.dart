@@ -145,6 +145,11 @@ class RealtimeGameService {
           locations: _currentRoom!.locations,
         );
         _roomController.add(_currentRoom);
+        
+        // Auto-advance to next round after a short delay
+        Future.delayed(const Duration(seconds: 3), () {
+          _advanceToNextRound();
+        });
       }
     });
 
@@ -515,6 +520,36 @@ class RealtimeGameService {
         print('⏱️ Auto-submitting due to time expiry');
       }
       _apiService.timeExpired(_currentRoom!.id, _currentPlayerName!);
+    }
+  }
+
+  // Auto-advance to next round after round ends
+  Future<void> _advanceToNextRound() async {
+    if (_currentRoom == null) return;
+    
+    // Only advance if we're in roundResult state
+    if (_currentRoom!.state != GameState.roundResult) return;
+    
+    if (kDebugMode) {
+      print('🎮 Auto-advancing to next round...');
+    }
+    
+    try {
+      final result = await _apiService.nextRound(_currentRoom!.id);
+      
+      // Check if game finished
+      if (result['gameFinished'] == true) {
+        // Game will transition via the game-finished Pusher event
+        if (kDebugMode) {
+          print('🎮 Game finished!');
+        }
+      }
+      // If not finished, the new-round Pusher event will update the state
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error advancing to next round: $e');
+      }
+      _errorController.add('Failed to advance to next round: $e');
     }
   }
 
